@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="453" height="433" viewBox="0 0 453 433">
+  <defs>
+    <linearGradient id="sunGradient" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffd84a"/>
+      <stop offset="0.48" stop-color="#ffb52f"/>
+      <stop offset="1" stop-color="#ff8727"/>
+    </linearGradient>
+    <linearGradient id="violetGradient" x1="0" y1="0" x2="1" y2="0.85">
+      <stop offset="0" stop-color="#b51cff"/>
+      <stop offset="0.55" stop-color="#a313f4"/>
+      <stop offset="1" stop-color="#8e13ed"/>
+    </linearGradient>
+    <linearGradient id="boltGold" x1="0" y1="0" x2="0.9" y2="0.9">
+      <stop offset="0" stop-color="#ffdf42"/>
+      <stop offset="0.45" stop-color="#ffc02e"/>
+      <stop offset="1" stop-color="#ff9c25"/>
+    </linearGradient>
+    <linearGradient id="boltLight" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffd94a"/>
+      <stop offset="1" stop-color="#ffb52d"/>
+    </linearGradient>
+    <linearGradient id="boltPurple" x1="0" y1="0" x2="1" y2="0.8">
+      <stop offset="0" stop-color="#b61bff"/>
+      <stop offset="1" stop-color="#9412ee"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Upper half of the circular mark; the background and center remain transparent. -->
+  <path d="M48 206
+           A173 173 0 0 1 394 206
+           L305 206
+           A85 85 0 0 0 136 206 Z"
+        fill="url(#sunGradient)"/>
+
+  <!-- Lower half, with the same round outer silhouette. -->
+  <path d="M48 229
+           A173 173 0 0 0 394 229
+           L305 229
+           A85 85 0 0 1 136 229 Z"
+        fill="url(#violetGradient)"/>
+
+  <!-- Compass bolt: distinct facets reproduce the original multi-shade look. -->
+  <path d="M270 113 L248 230 L172 321 L190 215 L194 204 Z"
+        fill="url(#boltGold)"/>
+  <path d="M270 113 L248 230 L194 204 L261 129 Z"
+        fill="url(#boltPurple)"/>
+  <path d="M270 113 L261 129 L248 230 L234 221 Z"
+        fill="#8f12eb"/>
+  <path d="M194 204 L248 230 L172 321 L190 215 Z"
+        fill="url(#boltLight)"/>
+  <path d="M194 204 L216 214 L184 304 L172 321 L190 215 Z"
+        fill="#ffd13a" opacity="0.72"/>
+  <path d="M216 214 L248 230 L172 321 Z"
+        fill="#ffad27" opacity="0.62"/>
+</svg>

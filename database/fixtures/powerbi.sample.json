@@ -1,0 +1,1628 @@
+{
+ "_note": "Dati di ESEMPIO con la stessa struttura della Scanner API di Power BI. Usati quando powerbi.mode = 'fixture'.",
+ "scanResult": {
+  "workspaces": [
+   {
+    "id": "f96b1a31-ba12-5804-9a6a-314661257d4c",
+    "name": "Commerciale Italia",
+    "description": "Analisi vendite, clienti e rete agenti per il mercato italiano",
+    "type": "Workspace",
+    "state": "Active",
+    "isOnDedicatedCapacity": false,
+    "users": [
+     {
+      "groupUserAccessRight": "Viewer",
+      "displayName": "BI - Commerciale",
+      "identifier": "3144a3a7-ea30-5256-9b13-c71d87d74dc0",
+      "graphId": "3144a3a7-ea30-5256-9b13-c71d87d74dc0",
+      "principalType": "Group"
+     },
+     {
+      "groupUserAccessRight": "Admin",
+      "emailAddress": "laura.rossi@azienda.it",
+      "displayName": "Laura Rossi",
+      "identifier": "laura.rossi@azienda.it",
+      "graphId": "04d2fe39-cfce-5f01-b4a0-f98347c906c1",
+      "principalType": "User",
+      "userType": "Member"
+     }
+    ],
+    "datasets": [
+     {
+      "id": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20",
+      "name": "Modello Vendite",
+      "configuredBy": "laura.rossi@azienda.it",
+      "createdDate": "2024-03-11T09:00:00Z",
+      "targetStorageMode": "Import",
+      "contentProviderType": "PbixInImportMode",
+      "endorsementDetails": {
+       "endorsement": "Certified",
+       "certifiedBy": "Team BI"
+      },
+      "datasourceUsages": [
+       {
+        "datasourceInstanceId": "fc775365-217a-5e73-a4d9-cfe1be93e24b"
+       },
+       {
+        "datasourceInstanceId": "d9094c74-9f08-538f-a283-ef7b94391a3a"
+       }
+      ],
+      "tables": [
+       {
+        "name": "Vendite",
+        "columns": [
+         {
+          "name": "DataDocumento",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "CodCliente",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "CodArticolo",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "CodAgente",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Importo",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Quantita",
+          "dataType": "Int64",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Costo",
+          "dataType": "Double",
+          "isHidden": true,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Fatturato Totale",
+          "expression": "SUM(Vendite[Importo])",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "Fatturato AP",
+          "expression": "CALCULATE([Fatturato Totale], SAMEPERIODLASTYEAR(Calendario[Data]))",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "Fatturato YoY %",
+          "expression": "DIVIDE([Fatturato Totale]-[Fatturato AP],[Fatturato AP])",
+          "isHidden": false,
+          "formatString": "0.0%"
+         },
+         {
+          "name": "Quantità Venduta",
+          "expression": "SUM(Vendite[Quantita])",
+          "isHidden": false
+         },
+         {
+          "name": "Margine %",
+          "expression": "DIVIDE([Fatturato Totale]-SUM(Vendite[Costo]),[Fatturato Totale])",
+          "isHidden": false,
+          "formatString": "0.0%",
+          "description": "Margine lordo su fatturato"
+         },
+         {
+          "name": "Budget Fatturato",
+          "expression": "SUM(Budget[Valore])",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "Scostamento Budget %",
+          "expression": "DIVIDE([Fatturato Totale]-[Budget Fatturato],[Budget Fatturato])",
+          "isHidden": false,
+          "formatString": "0.0%"
+         }
+        ],
+        "isHidden": false,
+        "source": [
+         {
+          "expression": "let Origine = Sql.Database(\"dwh.azienda.local\", \"DWH\"), Vendite = Origine{[Schema=\"sales\",Item=\"FactSales\"]}[Data] in Vendite"
+         }
+        ]
+       },
+       {
+        "name": "Clienti",
+        "columns": [
+         {
+          "name": "CodCliente",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "RagioneSociale",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Segmento",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Canale",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false
+       },
+       {
+        "name": "Prodotti",
+        "columns": [
+         {
+          "name": "CodArticolo",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Descrizione",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Famiglia",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Brand",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false
+       },
+       {
+        "name": "Geografia",
+        "columns": [
+         {
+          "name": "Regione",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Provincia",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Zona Commerciale",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false
+       },
+       {
+        "name": "Agenti",
+        "columns": [
+         {
+          "name": "CodAgente",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Agente",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Area Manager",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false
+       },
+       {
+        "name": "Budget",
+        "columns": [
+         {
+          "name": "Mese",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Regione",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Valore",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": true
+       },
+       {
+        "name": "Calendario",
+        "columns": [
+         {
+          "name": "Data",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Anno",
+          "dataType": "Int64",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Mese",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Trimestre",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false,
+        "source": [
+         {
+          "expression": "let Origine = List.Dates(#date(2020,1,1), 3650, #duration(1,0,0,0)) in Origine"
+         }
+        ]
+       }
+      ],
+      "users": [
+       {
+        "datasetUserAccessRight": "Read",
+        "displayName": "BI - Commerciale",
+        "identifier": "3144a3a7-ea30-5256-9b13-c71d87d74dc0",
+        "graphId": "3144a3a7-ea30-5256-9b13-c71d87d74dc0",
+        "principalType": "Group"
+       }
+      ]
+     }
+    ],
+    "reports": [
+     {
+      "id": "927e7922-7634-5b45-b685-1cb73962bf00",
+      "name": "Vendite per Regione",
+      "reportType": "PowerBIReport",
+      "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20",
+      "description": "Fatturato, quantità e margine per regione, provincia e zona commerciale.",
+      "createdDateTime": "2024-03-12T10:00:00Z",
+      "modifiedDateTime": "2026-09-28T14:22:00Z",
+      "createdBy": "laura.rossi@azienda.it",
+      "modifiedBy": "marco.bianchi@azienda.it",
+      "endorsementDetails": {
+       "endorsement": "Certified",
+       "certifiedBy": "Team BI"
+      },
+      "users": [
+       {
+        "reportUserAccessRight": "Read",
+        "displayName": "Direzione",
+        "identifier": "cb586da5-0937-5218-ac76-4626d20544a0",
+        "graphId": "cb586da5-0937-5218-ac76-4626d20544a0",
+        "principalType": "Group"
+       },
+       {
+        "reportUserAccessRight": "Owner",
+        "emailAddress": "laura.rossi@azienda.it",
+        "displayName": "Laura Rossi",
+        "identifier": "laura.rossi@azienda.it",
+        "graphId": "04d2fe39-cfce-5f01-b4a0-f98347c906c1",
+        "principalType": "User",
+        "userType": "Member"
+       }
+      ]
+     },
+     {
+      "id": "c819b767-70cd-5428-8463-19d75070dbeb",
+      "name": "Analisi Clienti Top",
+      "reportType": "PowerBIReport",
+      "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20",
+      "createdDateTime": "2025-01-20T10:00:00Z",
+      "modifiedDateTime": "2026-07-03T08:10:00Z",
+      "createdBy": "marco.bianchi@azienda.it",
+      "modifiedBy": "marco.bianchi@azienda.it",
+      "users": [
+       {
+        "reportUserAccessRight": "Owner",
+        "emailAddress": "marco.bianchi@azienda.it",
+        "displayName": "Marco Bianchi",
+        "identifier": "marco.bianchi@azienda.it",
+        "graphId": "e5522539-5a3a-5393-8f7d-fcc79e48970b",
+        "principalType": "User",
+        "userType": "Member"
+       }
+      ]
+     },
+     {
+      "id": "bbb1e6a7-1171-54d5-ab45-74be25b87c81",
+      "name": "Performance Rete Agenti",
+      "reportType": "PowerBIReport",
+      "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20",
+      "createdDateTime": "2025-05-02T10:00:00Z",
+      "modifiedDateTime": "2026-10-01T16:40:00Z",
+      "createdBy": "marco.bianchi@azienda.it",
+      "modifiedBy": "laura.rossi@azienda.it",
+      "endorsementDetails": {
+       "endorsement": "Promoted"
+      },
+      "users": [
+       {
+        "reportUserAccessRight": "Owner",
+        "emailAddress": "marco.bianchi@azienda.it",
+        "displayName": "Marco Bianchi",
+        "identifier": "marco.bianchi@azienda.it",
+        "graphId": "e5522539-5a3a-5393-8f7d-fcc79e48970b",
+        "principalType": "User",
+        "userType": "Member"
+       }
+      ]
+     },
+     {
+      "id": "7ad4e5f5-d1cd-5bdc-a21e-2b398f8941ec",
+      "appId": "1ad09d8b-5fc3-53e3-8cc6-c4740524957d",
+      "originalReportObjectId": "927e7922-7634-5b45-b685-1cb73962bf00",
+      "name": "Vendite per Regione",
+      "reportType": "PowerBIReport",
+      "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20",
+      "users": [
+       {
+        "reportUserAccessRight": "Read",
+        "displayName": "Tutti i dipendenti",
+        "identifier": "b29c5efa-4297-59a3-9eca-dbb61c96396d",
+        "graphId": "b29c5efa-4297-59a3-9eca-dbb61c96396d",
+        "principalType": "Group"
+       }
+      ]
+     }
+    ],
+    "dashboards": [
+     {
+      "id": "b9e9d0c1-e3aa-5c97-9223-c31cfd62823b",
+      "displayName": "Cruscotto Direzione Commerciale",
+      "isReadOnly": false,
+      "tiles": [
+       {
+        "id": "4be2fac9-d3c7-50d7-aa40-e4a676461eb2",
+        "title": "Fatturato YTD",
+        "reportId": "927e7922-7634-5b45-b685-1cb73962bf00",
+        "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20"
+       },
+       {
+        "id": "c75eed41-b8c7-5e8f-a8e6-80e20562a903",
+        "title": "Fatturato per regione",
+        "reportId": "927e7922-7634-5b45-b685-1cb73962bf00",
+        "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20"
+       },
+       {
+        "id": "dfc12cf0-c286-5526-8753-a23e909dbff2",
+        "title": "Top 10 clienti",
+        "reportId": "c819b767-70cd-5428-8463-19d75070dbeb",
+        "datasetId": "ffbf672a-53e2-5d6f-ba50-3d4f9169de20"
+       }
+      ],
+      "users": [
+       {
+        "dashboardUserAccessRight": "Read",
+        "displayName": "Direzione",
+        "identifier": "cb586da5-0937-5218-ac76-4626d20544a0",
+        "graphId": "cb586da5-0937-5218-ac76-4626d20544a0",
+        "principalType": "Group"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "ea95adab-ed91-5372-85f4-f4d5599f429e",
+    "name": "Amministrazione e Finanza",
+    "type": "Workspace",
+    "state": "Active",
+    "isOnDedicatedCapacity": false,
+    "users": [
+     {
+      "groupUserAccessRight": "Member",
+      "displayName": "BI - Finanza",
+      "identifier": "707a9a37-12f7-53c1-b561-6292ef8a76b4",
+      "graphId": "707a9a37-12f7-53c1-b561-6292ef8a76b4",
+      "principalType": "Group"
+     }
+    ],
+    "datasets": [
+     {
+      "id": "f28da23b-1618-54cd-907a-b49f4c546e8c",
+      "name": "Contabilità Generale",
+      "configuredBy": "giulia.verdi@azienda.it",
+      "createdDate": "2023-11-02T09:00:00Z",
+      "targetStorageMode": "Import",
+      "datasourceUsages": [
+       {
+        "datasourceInstanceId": "fc775365-217a-5e73-a4d9-cfe1be93e24b"
+       }
+      ],
+      "tables": [
+       {
+        "name": "MovimentiContabili",
+        "columns": [
+         {
+          "name": "DataRegistrazione",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Conto",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "CentroDiCosto",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Dare",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Avere",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Ricavi",
+          "expression": "CALCULATE(SUM(MovimentiContabili[Avere]), PianoDeiConti[Classe]=\"Ricavi\")",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "Costi Operativi",
+          "expression": "CALCULATE(SUM(MovimentiContabili[Dare]), PianoDeiConti[Classe]=\"Costi\")",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "EBITDA",
+          "expression": "[Ricavi]-[Costi Operativi]",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "EBITDA %",
+          "expression": "DIVIDE([EBITDA],[Ricavi])",
+          "isHidden": false,
+          "formatString": "0.0%"
+         }
+        ],
+        "isHidden": false
+       },
+       {
+        "name": "PianoDeiConti",
+        "columns": [
+         {
+          "name": "Conto",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Descrizione",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Classe",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false
+       },
+       {
+        "name": "Crediti",
+        "columns": [
+         {
+          "name": "Cliente",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Scadenza",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Importo",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Crediti Scaduti",
+          "expression": "CALCULATE(SUM(Crediti[Importo]), Crediti[Scadenza] < TODAY())",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "DSO Giorni",
+          "expression": "DIVIDE(SUM(Crediti[Importo]),[Ricavi])*365",
+          "isHidden": false,
+          "formatString": "0"
+         }
+        ],
+        "isHidden": false
+       },
+       {
+        "name": "Calendario",
+        "columns": [
+         {
+          "name": "Data",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Anno",
+          "dataType": "Int64",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Mese",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Trimestre",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false,
+        "source": [
+         {
+          "expression": "let Origine = List.Dates(#date(2020,1,1), 3650, #duration(1,0,0,0)) in Origine"
+         }
+        ]
+       }
+      ],
+      "users": [
+       {
+        "datasetUserAccessRight": "ReadWrite",
+        "displayName": "BI - Finanza",
+        "identifier": "707a9a37-12f7-53c1-b561-6292ef8a76b4",
+        "graphId": "707a9a37-12f7-53c1-b561-6292ef8a76b4",
+        "principalType": "Group"
+       }
+      ]
+     }
+    ],
+    "reports": [
+     {
+      "id": "99fd5166-cead-59de-994d-47d12584f282",
+      "name": "Conto Economico Mensile",
+      "reportType": "PowerBIReport",
+      "datasetId": "f28da23b-1618-54cd-907a-b49f4c546e8c",
+      "description": "Ricavi, costi ed EBITDA per mese e centro di costo.",
+      "createdDateTime": "2023-11-05T10:00:00Z",
+      "modifiedDateTime": "2026-10-06T11:00:00Z",
+      "createdBy": "giulia.verdi@azienda.it",
+      "modifiedBy": "giulia.verdi@azienda.it",
+      "endorsementDetails": {
+       "endorsement": "Certified",
+       "certifiedBy": "CFO Office"
+      },
+      "users": [
+       {
+        "reportUserAccessRight": "Owner",
+        "emailAddress": "giulia.verdi@azienda.it",
+        "displayName": "Giulia Verdi",
+        "identifier": "giulia.verdi@azienda.it",
+        "graphId": "f6618868-aff6-5992-89bf-628ef577a633",
+        "principalType": "User",
+        "userType": "Member"
+       }
+      ]
+     },
+     {
+      "id": "72923c5c-f9ac-5f57-aa78-c1dd2b197244",
+      "name": "Scadenzario Crediti Clienti",
+      "reportType": "PaginatedReport",
+      "description": "Elenco stampabile dei crediti scaduti e a scadere per cliente.",
+      "createdDateTime": "2024-06-10T10:00:00Z",
+      "modifiedDateTime": "2026-02-14T09:00:00Z",
+      "createdBy": "giulia.verdi@azienda.it",
+      "modifiedBy": "giulia.verdi@azienda.it",
+      "users": []
+     }
+    ],
+    "dashboards": []
+   },
+   {
+    "id": "77776e00-c871-5d16-9a5e-97c918ce355d",
+    "name": "Logistica e Magazzino",
+    "type": "Workspace",
+    "state": "Active",
+    "isOnDedicatedCapacity": false,
+    "users": [
+     {
+      "groupUserAccessRight": "Viewer",
+      "displayName": "BI - Logistica",
+      "identifier": "2f58429d-d08b-5efe-bf9e-5958f613fa44",
+      "graphId": "2f58429d-d08b-5efe-bf9e-5958f613fa44",
+      "principalType": "Group"
+     }
+    ],
+    "datasets": [
+     {
+      "id": "d13f7f76-e5df-5665-9187-093936ed9ec5",
+      "name": "Supply Chain",
+      "configuredBy": "paolo.neri@azienda.it",
+      "createdDate": "2024-09-01T09:00:00Z",
+      "targetStorageMode": "DirectQuery",
+      "datasourceUsages": [
+       {
+        "datasourceInstanceId": "fc775365-217a-5e73-a4d9-cfe1be93e24b"
+       }
+      ],
+      "tables": [
+       {
+        "name": "Giacenze",
+        "columns": [
+         {
+          "name": "Magazzino",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "CodArticolo",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Quantita",
+          "dataType": "Int64",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "ValoreUnitario",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Valore Giacenza",
+          "expression": "SUMX(Giacenze, Giacenze[Quantita]*Giacenze[ValoreUnitario])",
+          "isHidden": false,
+          "formatString": "#,0 €"
+         },
+         {
+          "name": "Giorni di Copertura",
+          "expression": "DIVIDE(SUM(Giacenze[Quantita]), [Consumo Medio Giornaliero])",
+          "isHidden": false,
+          "formatString": "0"
+         }
+        ],
+        "isHidden": false
+       },
+       {
+        "name": "Spedizioni",
+        "columns": [
+         {
+          "name": "DataSpedizione",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "DataConsegna",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Vettore",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Regione",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Consegne Puntuali %",
+          "expression": "DIVIDE([Consegne Puntuali],COUNTROWS(Spedizioni))",
+          "isHidden": false,
+          "formatString": "0.0%"
+         },
+         {
+          "name": "Lead Time Medio",
+          "expression": "AVERAGEX(Spedizioni, Spedizioni[DataConsegna]-Spedizioni[DataSpedizione])",
+          "isHidden": false,
+          "formatString": "0.0"
+         },
+         {
+          "name": "Consegne Puntuali",
+          "expression": "CALCULATE(COUNTROWS(Spedizioni), Spedizioni[InRitardo]=FALSE())",
+          "isHidden": false
+         },
+         {
+          "name": "Consumo Medio Giornaliero",
+          "expression": "1",
+          "isHidden": false
+         }
+        ],
+        "isHidden": false
+       },
+       {
+        "name": "Magazzini",
+        "columns": [
+         {
+          "name": "Magazzino",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Citta",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Regione",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false
+       },
+       {
+        "name": "Calendario",
+        "columns": [
+         {
+          "name": "Data",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Anno",
+          "dataType": "Int64",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Mese",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Trimestre",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false,
+        "source": [
+         {
+          "expression": "let Origine = List.Dates(#date(2020,1,1), 3650, #duration(1,0,0,0)) in Origine"
+         }
+        ]
+       }
+      ],
+      "users": []
+     }
+    ],
+    "reports": [
+     {
+      "id": "b5ecefe4-6dc0-5cb6-bcbc-91809c5d70fd",
+      "name": "Giacenze di Magazzino",
+      "reportType": "PowerBIReport",
+      "datasetId": "d13f7f76-e5df-5665-9187-093936ed9ec5",
+      "createdDateTime": "2024-09-03T10:00:00Z",
+      "modifiedDateTime": "2026-09-30T07:00:00Z",
+      "createdBy": "paolo.neri@azienda.it",
+      "modifiedBy": "paolo.neri@azienda.it",
+      "users": []
+     },
+     {
+      "id": "fd76c8c5-6ca5-55b3-b892-85889c0c12cc",
+      "name": "Performance Consegne",
+      "reportType": "PowerBIReport",
+      "datasetId": "d13f7f76-e5df-5665-9187-093936ed9ec5",
+      "description": "Puntualità e tempi di consegna per vettore e regione.",
+      "createdDateTime": "2025-02-11T10:00:00Z",
+      "modifiedDateTime": "2026-08-21T07:00:00Z",
+      "createdBy": "paolo.neri@azienda.it",
+      "modifiedBy": "paolo.neri@azienda.it",
+      "users": []
+     }
+    ],
+    "dashboards": []
+   },
+   {
+    "id": "1dd4beb2-3877-5c29-977f-c1c71b7114d8",
+    "name": "HR People Analytics",
+    "type": "Workspace",
+    "state": "Active",
+    "isOnDedicatedCapacity": true,
+    "users": [
+     {
+      "groupUserAccessRight": "Viewer",
+      "displayName": "BI - HR",
+      "identifier": "17d89a12-250a-5d21-a30f-fc357bbcddc8",
+      "graphId": "17d89a12-250a-5d21-a30f-fc357bbcddc8",
+      "principalType": "Group"
+     }
+    ],
+    "datasets": [
+     {
+      "id": "07365197-d515-51e7-96d0-4a6c6bb889c6",
+      "name": "Persone",
+      "configuredBy": "sara.gallo@azienda.it",
+      "createdDate": "2025-04-01T09:00:00Z",
+      "targetStorageMode": "Import",
+      "endorsementDetails": {
+       "endorsement": "Promoted"
+      },
+      "datasourceUsages": [
+       {
+        "datasourceInstanceId": "aeee12f5-7371-5635-a318-62db612a4db5"
+       }
+      ],
+      "tables": [
+       {
+        "name": "Dipendenti",
+        "columns": [
+         {
+          "name": "Matricola",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Reparto",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Sede",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "DataAssunzione",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "RAL",
+          "dataType": "Double",
+          "isHidden": true,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Headcount",
+          "expression": "DISTINCTCOUNT(Dipendenti[Matricola])",
+          "isHidden": false
+         },
+         {
+          "name": "Turnover %",
+          "expression": "DIVIDE([Cessati],[Headcount])",
+          "isHidden": false,
+          "formatString": "0.0%"
+         },
+         {
+          "name": "Cessati",
+          "expression": "0",
+          "isHidden": false
+         }
+        ],
+        "isHidden": false
+       },
+       {
+        "name": "Assenze",
+        "columns": [
+         {
+          "name": "Matricola",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Data",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Causale",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Ore",
+          "dataType": "Double",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [
+         {
+          "name": "Tasso Assenteismo",
+          "expression": "DIVIDE(SUM(Assenze[Ore]),[Ore Teoriche])",
+          "isHidden": false,
+          "formatString": "0.0%"
+         },
+         {
+          "name": "Ore Teoriche",
+          "expression": "1",
+          "isHidden": false
+         }
+        ],
+        "isHidden": false
+       },
+       {
+        "name": "Calendario",
+        "columns": [
+         {
+          "name": "Data",
+          "dataType": "DateTime",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Anno",
+          "dataType": "Int64",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Mese",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         },
+         {
+          "name": "Trimestre",
+          "dataType": "String",
+          "isHidden": false,
+          "columnType": "Data"
+         }
+        ],
+        "measures": [],
+        "isHidden": false,
+        "source": [
+         {
+          "expression": "let Origine = List.Dates(#date(2020,1,1), 3650, #duration(1,0,0,0)) in Origine"
+         }
+        ]
+       }
+      ],
+      "users": []
+     }
+    ],
+    "reports": [
+     {
+      "id": "bf26d720-303a-5740-a228-cefcefb592e7",
+      "name": "Organico e Turnover",
+      "reportType": "PowerBIReport",
+      "datasetId": "07365197-d515-51e7-96d0-4a6c6bb889c6",
+      "createdDateTime": "2025-04-03T10:00:00Z",
+      "modifiedDateTime": "2026-09-15T07:00:00Z",
+      "createdBy": "sara.gallo@azienda.it",
+      "modifiedBy": "sara.gallo@azienda.it",
+      "sensitivityLabel": {
+       "labelId": "1a8e1ac6-2e62-5abe-a35d-c46c8ba84842"
+      },
+      "users": [
+       {
+        "reportUserAccessRight": "Owner",
+        "emailAddress": "sara.gallo@azienda.it",
+        "displayName": "Sara Gallo",
+        "identifier": "sara.gallo@azienda.it",
+        "graphId": "8d06b345-8aa1-531e-8306-64b046804c47",
+        "principalType": "User",
+        "userType": "Member"
+       }
+      ]
+     }
+    ],
+    "dashboards": []
+   }
+  ],
+  "datasourceInstances": [
+   {
+    "datasourceType": "Sql",
+    "connectionDetails": {
+     "server": "dwh.azienda.local",
+     "database": "DWH"
+    },
+    "datasourceId": "fc775365-217a-5e73-a4d9-cfe1be93e24b",
+    "gatewayId": "de5315b2-ce15-56f3-98a0-a4b00982ed93"
+   },
+   {
+    "datasourceType": "SharePointList",
+    "connectionDetails": {
+     "url": "https://azienda.sharepoint.com/sites/hr"
+    },
+    "datasourceId": "aeee12f5-7371-5635-a318-62db612a4db5"
+   },
+   {
+    "datasourceType": "File",
+    "connectionDetails": {
+     "path": "\\\\fileserver\\budget\\budget_2026.xlsx"
+    },
+    "datasourceId": "d9094c74-9f08-538f-a283-ef7b94391a3a",
+    "gatewayId": "de5315b2-ce15-56f3-98a0-a4b00982ed93"
+   }
+  ]
+ },
+ "pages": {
+  "927e7922-7634-5b45-b685-1cb73962bf00": [
+   {
+    "name": "ReportSection",
+    "displayName": "Panoramica",
+    "order": 0
+   },
+   {
+    "name": "ReportSection1",
+    "displayName": "Per regione",
+    "order": 1
+   },
+   {
+    "name": "ReportSection2",
+    "displayName": "Per provincia",
+    "order": 2
+   },
+   {
+    "name": "ReportSection3",
+    "displayName": "Zone commerciali",
+    "order": 3
+   },
+   {
+    "name": "ReportSection4",
+    "displayName": "Dettaglio",
+    "order": 4
+   }
+  ],
+  "c819b767-70cd-5428-8463-19d75070dbeb": [
+   {
+    "name": "ReportSection",
+    "displayName": "Top 20 clienti",
+    "order": 0
+   },
+   {
+    "name": "ReportSection1",
+    "displayName": "Segmenti",
+    "order": 1
+   },
+   {
+    "name": "ReportSection2",
+    "displayName": "Clienti persi",
+    "order": 2
+   }
+  ],
+  "bbb1e6a7-1171-54d5-ab45-74be25b87c81": [
+   {
+    "name": "ReportSection",
+    "displayName": "Classifica agenti",
+    "order": 0
+   },
+   {
+    "name": "ReportSection1",
+    "displayName": "Obiettivi vs realizzato",
+    "order": 1
+   }
+  ],
+  "99fd5166-cead-59de-994d-47d12584f282": [
+   {
+    "name": "ReportSection",
+    "displayName": "Sintesi",
+    "order": 0
+   },
+   {
+    "name": "ReportSection1",
+    "displayName": "Conto economico",
+    "order": 1
+   },
+   {
+    "name": "ReportSection2",
+    "displayName": "Centri di costo",
+    "order": 2
+   }
+  ],
+  "b5ecefe4-6dc0-5cb6-bcbc-91809c5d70fd": [
+   {
+    "name": "ReportSection",
+    "displayName": "Valore giacenze",
+    "order": 0
+   },
+   {
+    "name": "ReportSection1",
+    "displayName": "Copertura",
+    "order": 1
+   },
+   {
+    "name": "ReportSection2",
+    "displayName": "Articoli fermi",
+    "order": 2
+   }
+  ],
+  "fd76c8c5-6ca5-55b3-b892-85889c0c12cc": [
+   {
+    "name": "ReportSection",
+    "displayName": "Puntualità",
+    "order": 0
+   },
+   {
+    "name": "ReportSection1",
+    "displayName": "Vettori",
+    "order": 1
+   },
+   {
+    "name": "ReportSection2",
+    "displayName": "Mappa consegne",
+    "order": 2
+   }
+  ]
+ },
+ "_note_definitions": "Struttura (pagine, grafici, campi usati) di alcuni report: tre report condividono lo stesso «Modello Vendite» ma usano campi diversi.",
+ "definitions": {
+  "927e7922-7634-5b45-b685-1cb73962bf00": {
+   "pages": [
+    {
+     "name": "ReportSection",
+     "displayName": "Panoramica",
+     "order": 0
+    },
+    {
+     "name": "ReportSection1",
+     "displayName": "Per regione",
+     "order": 1
+    },
+    {
+     "name": "ReportSection2",
+     "displayName": "Per provincia",
+     "order": 2
+    },
+    {
+     "name": "ReportSection3",
+     "displayName": "Zone commerciali",
+     "order": 3
+    },
+    {
+     "name": "ReportSection4",
+     "displayName": "Dettaglio",
+     "order": 4
+    }
+   ],
+   "visuals": [
+    {
+     "page": "ReportSection",
+     "type": "card",
+     "title": "Fatturato",
+     "fields": [
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection",
+     "type": "card",
+     "title": "Crescita",
+     "fields": [
+      {
+       "entity": "Vendite",
+       "property": "Fatturato YoY %",
+       "kind": "measure",
+       "label": "Fatturato YoY %"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection",
+     "type": "lineChart",
+     "title": "Andamento mensile",
+     "fields": [
+      {
+       "entity": "Calendario",
+       "property": "Mese",
+       "kind": "column",
+       "label": "Mese"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato AP",
+       "kind": "measure",
+       "label": "Fatturato AP"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection1",
+     "type": "filledMap",
+     "title": "Fatturato per regione",
+     "fields": [
+      {
+       "entity": "Geografia",
+       "property": "Regione",
+       "kind": "column",
+       "label": "Regione"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection1",
+     "type": "tableEx",
+     "title": "Margine per regione",
+     "fields": [
+      {
+       "entity": "Geografia",
+       "property": "Regione",
+       "kind": "column",
+       "label": "Regione"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Margine %",
+       "kind": "measure",
+       "label": "Margine %"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection2",
+     "type": "barChart",
+     "title": "Top province",
+     "fields": [
+      {
+       "entity": "Geografia",
+       "property": "Provincia",
+       "kind": "column",
+       "label": "Provincia"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection3",
+     "type": "clusteredBarChart",
+     "title": "Zone commerciali",
+     "fields": [
+      {
+       "entity": "Geografia",
+       "property": "Zona Commerciale",
+       "kind": "column",
+       "label": "Zona Commerciale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Quantità Venduta",
+       "kind": "measure",
+       "label": "Quantità Venduta"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection4",
+     "type": "tableEx",
+     "title": "Dettaglio righe",
+     "fields": [
+      {
+       "entity": "Geografia",
+       "property": "Regione",
+       "kind": "column",
+       "label": "Regione"
+      },
+      {
+       "entity": "Calendario",
+       "property": "Mese",
+       "kind": "column",
+       "label": "Mese"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Quantità Venduta",
+       "kind": "measure",
+       "label": "Quantità Venduta"
+      }
+     ]
+    }
+   ]
+  },
+  "c819b767-70cd-5428-8463-19d75070dbeb": {
+   "pages": [
+    {
+     "name": "ReportSection",
+     "displayName": "Top 20 clienti",
+     "order": 0
+    },
+    {
+     "name": "ReportSection1",
+     "displayName": "Segmenti",
+     "order": 1
+    },
+    {
+     "name": "ReportSection2",
+     "displayName": "Clienti persi",
+     "order": 2
+    }
+   ],
+   "visuals": [
+    {
+     "page": "ReportSection",
+     "type": "barChart",
+     "title": "Top 20 clienti per fatturato",
+     "fields": [
+      {
+       "entity": "Clienti",
+       "property": "RagioneSociale",
+       "kind": "column",
+       "label": "RagioneSociale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection1",
+     "type": "donutChart",
+     "title": "Fatturato per segmento",
+     "fields": [
+      {
+       "entity": "Clienti",
+       "property": "Segmento",
+       "kind": "column",
+       "label": "Segmento"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection1",
+     "type": "tableEx",
+     "title": "Margine per canale",
+     "fields": [
+      {
+       "entity": "Clienti",
+       "property": "Canale",
+       "kind": "column",
+       "label": "Canale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Margine %",
+       "kind": "measure",
+       "label": "Margine %"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection2",
+     "type": "tableEx",
+     "title": "Clienti senza ordini quest'anno",
+     "fields": [
+      {
+       "entity": "Clienti",
+       "property": "RagioneSociale",
+       "kind": "column",
+       "label": "RagioneSociale"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato AP",
+       "kind": "measure",
+       "label": "Fatturato AP"
+      }
+     ]
+    }
+   ]
+  },
+  "bbb1e6a7-1171-54d5-ab45-74be25b87c81": {
+   "pages": [
+    {
+     "name": "ReportSection",
+     "displayName": "Classifica agenti",
+     "order": 0
+    },
+    {
+     "name": "ReportSection1",
+     "displayName": "Obiettivi vs realizzato",
+     "order": 1
+    }
+   ],
+   "visuals": [
+    {
+     "page": "ReportSection",
+     "type": "barChart",
+     "title": "Fatturato per agente",
+     "fields": [
+      {
+       "entity": "Agenti",
+       "property": "Agente",
+       "kind": "column",
+       "label": "Agente"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection1",
+     "type": "clusteredColumnChart",
+     "title": "Budget e realizzato",
+     "fields": [
+      {
+       "entity": "Agenti",
+       "property": "Area Manager",
+       "kind": "column",
+       "label": "Area Manager"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Budget Fatturato",
+       "kind": "measure",
+       "label": "Budget Fatturato"
+      },
+      {
+       "entity": "Vendite",
+       "property": "Fatturato Totale",
+       "kind": "measure",
+       "label": "Fatturato Totale"
+      }
+     ]
+    },
+    {
+     "page": "ReportSection1",
+     "type": "card",
+     "title": "Scostamento",
+     "fields": [
+      {
+       "entity": "Vendite",
+       "property": "Scostamento Budget %",
+       "kind": "measure",
+       "label": "Scostamento Budget %"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

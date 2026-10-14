@@ -1,0 +1,9 @@
+# Tutte le richieste che non sono file esistenti vanno al front controller.
+Options -Indexes
+RewriteEngine On
+# Deve coincidere con app.base_path in config/config.php (es. /ramingo/).
+# Se Ramingo è pubblicata alla radice del sito, usare: RewriteBase /
+RewriteBase /ramingo/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

@@ -1,0 +1,169 @@
+<?php
+declare(strict_types=1);
+
+namespace Ramingo\Models;
+
+use Ramingo\Core\Database;
+
+/**
+ * Vista unificata "elementi del catalogo" (report + report impaginati + dashboard)
+ * con filtri. Una sola query parametrica, riusata da catalogo e ricerca.
+ *
+ * Restano fuori i contenuti creati da Microsoft e non dall'azienda:
+ *  - il workspace «Admin monitoring» (tipo AdminWorkspace), creato da Fabric per gli amministratori;
+ *  - i report «Usage Metrics», generati da Power BI quando qualcuno apre le metriche di utilizzo.
+ */
+final class CatalogRepository extends Repository
+{
+    private const BASE = "
+        SELECT * FROM (
+            SELECT CASE WHEN r.report_type = 'PaginatedReport' THEN 'paginated' ELSE 'report' END AS kind,
+                   'report' AS entity_type,
+                   r.id, r.name, r.description, r.workspace_id, w.name AS workspace_name,
+                   ea.area_id, a.name AS area_name, a.icon AS area_icon, a.sort_order AS area_sort,
+                   r.endorsement, r.modified_at, r.modified_by, r.web_url, r.app_url, r.dataset_id,
+                   dr.last_success_at AS data_refreshed_at, dr.last_attempt_status AS data_last_status,
+                   dr.last_attempt_at AS data_last_attempt_at, dr.has_history AS data_has_history, dr.accessible AS data_accessible
+              FROM reports r
+              JOIN workspaces w ON w.id = r.workspace_id AND w.is_deleted = 0 AND COALESCE(w.type, '') <> 'AdminWorkspace'
+         LEFT JOIN item_area ea ON ea.entity_type = 'report' AND ea.entity_id = r.id
+         LEFT JOIN areas a ON a.id = ea.area_id
+         LEFT JOIN dataset_refreshes dr ON dr.dataset_id = r.dataset_id
+             WHERE r.is_deleted = 0
+               AND r.name NOT IN ('Report Usage Metrics Report', 'Dashboard Usage Metrics Report', 'Usage Metrics Report')
+            UNION ALL
+            SELECT 'dashboard', 'dashboard',
+                   d.id, d.name, NULL, d.workspace_id, w.name,
+                   ea.area_id, a.name, a.icon, a.sort_order,
+                   NULL, NULL, NULL, d.web_url, d.app_url, NULL,
+                   NULL, NULL, NULL, NULL, NULL
+              FROM dashboards d
+              JOIN workspaces w ON w.id = d.workspace_id AND w.is_deleted = 0 AND COALESCE(w.type, '') <> 'AdminWorkspace'
+         LEFT JOIN item_area ea ON ea.entity_type = 'dashboard' AND ea.entity_id = d.id
+         LEFT JOIN areas a ON a.id = ea.area_id
+             WHERE d.is_deleted = 0
+        ) items";
+
+    public const KINDS = [
+        'report'    => 'Report',
+        'paginated' => 'Report impaginato',
+        'dashboard' => 'Dashboard',
+    ];
+
+    /**
+     * @param array{area?:string, area_ids?:int[], workspace?:string, kind?:string, endorsement?:string, tag?:string} $f
+     * @return array{items: array, total: int}
+     */
+    public function find(array $f, int $limit, int $offset = 0, string $sort = 'name'): array
+    {
+        [$where, $params] = $this->where($f);
+        $order = match ($sort) {
+            'recent' => 'data_refreshed_at IS NULL, data_refreshed_at DESC, name COLLATE NOCASE',
+            'area'   => 'area_id IS NULL, area_sort, area_name, name COLLATE NOCASE',
+            default  => 'name COLLATE NOCASE',
+        };
+        $total = (int) $this->db->value('SELECT COUNT(*) FROM (' . self::BASE . $where . ')', $params);
+        $items = $this->db->all(self::BASE . $where . " ORDER BY $order LIMIT " . (int) $limit . ' OFFSET ' . (int) $offset, $params);
+        return ['items' => $items, 'total' => $total];
+    }
+
+    /** Elementi per id (mantiene l'ordine dato, es. ranking della ricerca). */
+    public function byKeys(array $keys): array
+    {
+        if (!$keys) {
+            return [];
+        }
+        $ids = array_map(static fn ($k) => explode(':', $k, 2)[1], $keys);
+        $rows = $this->db->all(self::BASE . ' WHERE id IN (' . Database::placeholders($ids) . ')', $ids);
+        $byKey = [];
+        foreach ($rows as $r) {
+            $byKey[$r['entity_type'] . ':' . $r['id']] = $r;
+        }
+        return array_values(array_filter(array_map(static fn ($k) => $byKey[$k] ?? null, $keys)));
+    }
+
+    /**
+     * Tutti gli elementi con la categoria assegnata AL SINGOLO elemento (own_area_id, null = segue il workspace).
+     * Usato dalla gestione categorie.
+     */
+    public function itemsWithOwnArea(): array
+    {
+        return $this->db->all(
+            'SELECT i.entity_type, i.kind, i.id, i.name, i.workspace_id, ia.area_id AS own_area_id
+               FROM (' . self::BASE . ') i
+          LEFT JOIN item_areas ia ON ia.entity_type = i.entity_type AND ia.entity_id = i.id
+           ORDER BY i.name COLLATE NOCASE'
+        );
+    }
+
+    /** Quanti elementi per tipo in tutto il catalogo: ['report' => 71, 'dashboard' => 4, ...]. */
+    public function counts(): array
+    {
+        return array_map('intval', array_column(
+            $this->db->all('SELECT kind, COUNT(*) AS n FROM (' . self::BASE . ') GROUP BY kind'), 'n', 'kind'));
+    }
+
+    /**
+     * Conteggi per la barra dei filtri. Ogni filtro conta gli elementi che rispettano
+     * GLI ALTRI filtri attivi: così ogni scelta proposta porta ad almeno un risultato.
+     * @param array $f stessi filtri di find()
+     */
+    public function facets(array $f = []): array
+    {
+        $from = function (array $without) use ($f): array {
+            [$where, $params] = $this->where(array_diff_key($f, array_flip($without)));
+            return ['(' . self::BASE . $where . ')', $params];
+        };
+
+        [$sql, $p] = $from(['area', 'area_ids']);
+        $areas = $this->db->all(
+            "SELECT area_id AS value, COALESCE(area_name, 'Da classificare') AS label, area_icon AS icon, COUNT(*) AS n
+               FROM $sql GROUP BY area_id ORDER BY area_id IS NULL, MIN(area_sort), label", $p);
+
+        [$sql, $p] = $from(['workspace']);
+        $workspaces = $this->db->all(
+            "SELECT workspace_id AS value, workspace_name AS label, COUNT(*) AS n FROM $sql
+              GROUP BY workspace_id ORDER BY label COLLATE NOCASE", $p);
+
+        [$sql, $p] = $from(['kind']);
+        $kinds = $this->db->all("SELECT kind AS value, COUNT(*) AS n FROM $sql GROUP BY kind", $p);
+
+        [$sql, $p] = $from(['endorsement']);
+        $endorsements = $this->db->all(
+            "SELECT endorsement AS value, COUNT(*) AS n FROM $sql WHERE endorsement IS NOT NULL GROUP BY endorsement", $p);
+
+        // Solo i tag scritti a mano: quelli automatici non sono mostrati ai colleghi
+        [$sql, $p] = $from(['tag']);
+        $tags = $this->db->all(
+            "SELECT t.tag AS value, t.tag AS label, COUNT(*) AS n
+               FROM $sql i JOIN tags t ON t.entity_type = i.entity_type AND t.entity_id = i.id AND t.source = 'manual'
+              GROUP BY t.tag ORDER BY n DESC, t.tag LIMIT 60", $p);
+
+        return compact('areas', 'workspaces', 'kinds', 'endorsements', 'tags');
+    }
+
+    private function where(array $f): array
+    {
+        $sql = [];
+        $params = [];
+        if (($f['area'] ?? '') === 'none') {
+            $sql[] = 'area_id IS NULL';
+        } elseif (!empty($f['area_ids'])) { // categoria + sottocategorie
+            // interi già validati scritti direttamente: dietro la vista item_area SQLite
+            // non converte i parametri testuali, e '2' non sarebbe uguale a 2
+            $sql[] = 'area_id IN (' . implode(', ', array_map('intval', $f['area_ids'])) . ')';
+        }
+        foreach (['workspace' => 'workspace_id', 'kind' => 'kind', 'endorsement' => 'endorsement'] as $key => $col) {
+            if (!empty($f[$key])) {
+                $sql[] = "$col = ?";
+                $params[] = $f[$key];
+            }
+        }
+        if (!empty($f['tag'])) {
+            $sql[] = "EXISTS (SELECT 1 FROM tags t WHERE t.entity_type = items.entity_type AND t.entity_id = items.id
+                              AND t.source = 'manual' AND t.tag = ?)";
+            $params[] = mb_strtolower((string) $f['tag']);
+        }
+        return [$sql ? ' WHERE ' . implode(' AND ', $sql) : '', $params];
+    }
+}
