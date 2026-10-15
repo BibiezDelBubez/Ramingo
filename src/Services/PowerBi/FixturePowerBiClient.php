@@ -46,6 +46,11 @@ final class FixturePowerBiClient implements PowerBiClient
         return $this->data['definitions'][$reportId] ?? null;
     }
 
+    public function lastError(): ?string
+    {
+        return null;
+    }
+
     /** Dati di esempio: aggiornamento notturno, con qualche modello fermo da tempo per vedere l'avviso. */
     public function datasetRefreshes(string $workspaceId, string $datasetId): ?array
     {

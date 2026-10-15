@@ -235,25 +235,40 @@ Anche nelle schede del catalogo compaiono solo descrizioni scritte da persone o 
 L'indicazione «Hai accesso / Probabilmente senza accesso» è una **stima**: la decisione vera la prende Power BI
 quando si apre il report.
 
-### 9.1 La pagina iniziale e i filtri
+### 9.1 La pagina iniziale, la ricerca e i filtri
 
-In alto c'è la ricerca («Quale report ti serve?») con alcune ricerche di esempio, che si cambiano in
-`config/config.php` → `catalog.examples`. Sotto, i filtri:
+Catalogo e risultati di ricerca sono **la stessa pagina**: in alto la ricerca («Quale report ti serve?»),
+a sinistra la colonna dei filtri, al centro i report. Gli esempi sotto la ricerca si cambiano in
+`config/config.php` → `catalog.examples`.
 
-| Filtro | Come appare | Quando compare |
+| Filtro | Come si combina | Note |
 |---|---|---|
-| **Categoria** | pulsanti in prima fila; le sottocategorie compaiono quando apri la categoria madre | quando almeno un workspace o report ha una categoria. Prima, solo gli amministratori vedono un avviso con il link per assegnarle |
-| **Workspace** | menu a tendina, con casella per filtrare l'elenco | sempre |
-| **Tipo** (report, dashboard, impaginato) | menu a tendina | solo se ci sono almeno due tipi |
-| **Approvazione** (certificati, promossi) | menu a tendina | solo se qualche report è certificato o promosso in Power BI |
-| **Tag** | menu a tendina | solo se esistono tag scritti a mano |
+| **Categoria** | più categorie = report dell'una **o** dell'altra | scegliere una categoria include le sue sottocategorie |
+| **Tag** | più tag = report che li hanno **tutti** | scelto «benelux», accanto agli altri tag compare quanti report hanno anche quello |
+| **Dati aggiornati** | una scelta | ultima settimana, ultimo mese, più vecchi di 3 mesi |
+| **Workspace** | più workspace = **o** | chiuso di default: è dove sta il report in Power BI, non di cosa parla |
+| **Tipo**, **Approvazione** | **o** | compaiono solo se servono |
 
-I filtri si combinano, e i numeri accanto a ogni voce tengono conto degli altri filtri attivi:
-non si finisce mai su «nessun risultato».
-
-**Perché la categoria viene prima del workspace.** Il workspace dice *dove* è salvato un report in Power BI;
-la categoria dice *di cosa parla*. Ai colleghi serve la seconda. Il workspace resta come filtro secondario,
-utile soprattutto a chi i report li costruisce.
+- I numeri accanto a ogni voce tengono conto degli altri filtri attivi: non si finisce su «nessun risultato».
+- I filtri attivi sono elencati sopra i risultati, ognuno con la × per toglierlo.
+- La colonna dei filtri **resta ferma** mentre scorri, se ci sta tutta nello schermo; altrimenti scorre con la pagina.
+  Tag e workspace mostrano le prime 8 voci più «Mostra tutti». Il pulsante **«Nascondi»** la toglie per dare tutta
+  la larghezza ai report; si riapre con «Filtri (n)» sopra l'elenco, e la scelta viene ricordata.
+  Le sezioni chiuse indicano quante voci hai scelto, es. «Workspace (1)».
+- **Schede o elenco**: i due pulsanti in alto a destra; la scelta viene ricordata.
+- **Ordine**: per categoria (predefinito), per nome, dati più recenti; con una ricerca anche «più pertinenti».
+- **Report con dati fermi da più di 3 mesi** finiscono in fondo a ogni gruppo, sotto una riga tratteggiata
+  (soglia: `catalog.old_after_days`).
+- **Pagine**: oltre `catalog.page_size` report (oggi 48) l'elenco va su più pagine, con un avviso che dice
+  quanti ne mostra e in che ordine.
+- **Risultati deboli**: i report trovati solo tra i nomi tecnici dei dati (una colonna «fatturazione», una tabella
+  «t2viaggi clienti») stanno in una sezione chiusa in fondo, «Altri N report trovati solo tra i nomi tecnici dei dati»,
+  che si apre con un clic (e da sola se i risultati pertinenti sono meno di 3). Lì finisce anche tutto ciò che viene da
+  un modello condiviso da più report (es. il Master) quando Ramingo non sa quali campi usa ciascun report.
+- **Errori di battitura**: se una parola non esiste nel catalogo, Ramingo cerca la parola più simile
+  («carburnate» → «carburante») e lo dice sopra i risultati.
+- **Suggerimenti mentre scrivi**: oltre ai report, categorie e tag il cui nome corrisponde
+  (es. «Tag #benelux · 12 report»): un clic apre il catalogo già filtrato.
 
 ### 9.1.1 I tag
 
@@ -267,6 +282,24 @@ e della Direzione possono riguardare tutti i lavaggi.
   i report con quel tag. Nella pagina iniziale c'è il filtro **Tag**, che elenca tutti i tag con quanti report li usano.
   Anche la ricerca li considera: cercando «lavaggi» escono i report con quel tag, anche se la parola non è nel nome.
 - **Quanti:** pochi. Se un tag finisce su quasi tutti i report di una categoria, è una categoria, non un tag.
+
+### 9.1.2 Le ricerche senza risultati
+
+**Amministrazione → Ricerche** mostra cosa cercano i colleghi e, soprattutto, cosa cercano **senza trovare niente**.
+Ramingo registra solo il testo cercato e quanti report ha trovato, **non chi ha cercato**; i dati restano un anno.
+Per ogni ricerca senza risultati la colonna «Oggi trova» rifà la ricerca: dopo aver aggiunto un tag, una descrizione
+o un sinonimo si vede subito se basta.
+
+### 9.1.3 Sinonimi di ricerca
+
+**Amministrazione → Sinonimi di ricerca**: ogni riga è un gruppo di parole che la ricerca tratta come uguali
+(«personale, dipendenti, hr, risorse umane»). La prima parola è quella mostrata come interpretazione.
+La casella **Prova** mostra come Ramingo interpreta una ricerca. Dalle ricerche senza risultati c'è il collegamento
+«aggiungi come sinonimo». Alla prima apertura la pagina parte dai gruppi di `config/synonyms.php`; da lì in poi
+contano quelli salvati nella pagina. Le parole da ignorare («voglio», «report», articoli…) restano nel file.
+
+Da non confondere con il **Glossario**: il glossario dà un nome comprensibile ai dati e lo vedono i colleghi;
+i sinonimi lavorano solo dietro la ricerca.
 
 ### 9.2 Contenuti che Ramingo non mostra mai
 
@@ -285,6 +318,14 @@ Per escludere anche altri workspace (per esempio «TEST») si aggiunge il loro I
 
 Facoltativa. Vedi [AI.md](AI.md). All'AI vanno solo nomi e descrizioni (mai i dati dei report) e tutto ciò che
 produce è marcato «Interpretazione automatica».
+
+**Se l'AI non funziona** (crediti finiti, chiave scaduta, niente internet):
+- Ramingo non chiama mai l'AI da solo: solo quando qualcuno preme un pulsante («Chiedi all'AI», «Fatti spiegare…»).
+  Catalogo, ricerca e schede funzionano uguale, e i testi scritti a mano o in Power BI restano sempre quelli mostrati.
+- Chi preme il pulsante vede un messaggio chiaro: «crediti esauriti o pagamento non attivo», «chiave non valida»,
+  «impossibile raggiungere il servizio AI (manca internet…)».
+- Se la **chiave personale** non funziona e c'è una **chiave aziendale**, Ramingo riprova da solo con quella aziendale.
+- Ogni tentativo, riuscito o no, è nel registro in Amministrazione.
 
 ---
 
@@ -307,5 +348,6 @@ produce è marcato «Interpretazione automatica».
 | «Pagine non disponibili» | l'app non è membro del workspace | aggiungi Ramingo-Sync come *Visualizzatore* al workspace |
 | Un report ha perso le descrizioni | è stato ripubblicato come oggetto nuovo (vedi §3) | riscrivi le descrizioni sul nuovo; in futuro usa «Sostituisci» |
 | Incrementale «fallita» con `admin/workspaces/modified -> HTTP 400` | Power BI rifiuta la richiesta «solo i workspace modificati da…» (la data deve essere tra 30 giorni e 30 minuti fa, in UTC) | gestito da Ramingo: la data viene corretta e, se Power BI la rifiuta ancora, l'incrementale rilegge l'elenco completo invece di fallire. Il motivo esatto dato da Power BI finisce in `storage\logs` |
+| Il riepilogo della sincronizzazione dice «pages/definitions_not_accessible» con un motivo «HTTP 401» o «HTTP 403» | Ramingo-Sync non è membro del workspace, oppure manca l'impostazione del tenant «Le entità servizio possono usare le API di Fabric» | aggiungilo ai workspace (Visualizzatore; per leggere la struttura dei report probabilmente Collaboratore) e controlla l'impostazione. Ramingo riprova da solo dopo 6 ore (`sync.retry_denied_hours`) |
 | Sulle schede non compare «Dati aggiornati» | Ramingo-Sync non è membro del workspace del modello semantico | aggiungilo come Visualizzatore a quel workspace; il motivo esatto è nei Dettagli tecnici del report |
 | Errore «no such table» | database non aggiornato dopo un aggiornamento di Ramingo | `php bin\migrate.php` |

@@ -105,18 +105,35 @@ final class CatalogSync
 
     private function fetchPages(): array
     {
-        $ok = $denied = 0;
-        foreach ($this->reports->needingPages() as $r) {
+        $ok = 0;
+        $why = [];
+        foreach ($this->reports->needingPages((int) ($this->cfg['retry_denied_hours'] ?? 6)) as $r) {
             $pages = $this->pbi->reportPages($r['workspace_id'], $r['id']);
+            $error = null;
             if ($pages === null) {
-                $denied++;
+                $error = $this->pbi->lastError() ?? 'non accessibile';
+                $why[$error] = ($why[$error] ?? 0) + 1;
             } else {
                 $this->reports->replacePages($r['id'], $pages, 'pbi');
                 $ok++;
             }
-            $this->reports->touchPagesFetched($r['id'], now_iso());
+            $this->reports->touchPagesFetched($r['id'], now_iso(), $error);
         }
-        return ['pages_fetched' => $ok, 'pages_not_accessible' => $denied];
+        return ['pages_fetched' => $ok] + $this->denied('pages', $why);
+    }
+
+    /**
+     * Riepilogo dei rifiuti di Power BI: quanti e perché (il motivo più frequente),
+     * più una riga nel registro con tutti i motivi.
+     */
+    private function denied(string $what, array $why): array
+    {
+        if (!$why) {
+            return [$what . '_not_accessible' => 0];
+        }
+        arsort($why);
+        $this->log->warning("Power BI ha rifiutato la lettura ($what)", $why);
+        return [$what . '_not_accessible' => array_sum($why), $what . '_reason' => array_key_first($why)];
     }
 
     /**
@@ -125,30 +142,39 @@ final class CatalogSync
      */
     private function fetchRefreshes(): array
     {
-        $ok = $denied = 0;
+        $ok = 0;
+        $why = [];
         foreach ($this->refreshes->due((int) ($this->cfg['refresh_check_minutes'] ?? 60)) as $d) {
             $history = $this->pbi->datasetRefreshes($d['workspace_id'], $d['dataset_id']);
-            $history === null ? $denied++ : $ok++;
+            if ($history === null) {
+                $error = $this->pbi->lastError() ?? 'non accessibile';
+                $why[$error] = ($why[$error] ?? 0) + 1;
+            } else {
+                $ok++;
+            }
             $this->refreshes->save($d['dataset_id'], $d['workspace_id'], $history, now_iso());
         }
-        return ['data_refresh_checked' => $ok, 'data_refresh_not_accessible' => $denied];
+        return ['data_refresh_checked' => $ok] + $this->denied('data_refresh', $why);
     }
 
     /** Quali campi usa ogni report: si rilegge solo per i report nuovi o modificati. */
     private function fetchDefinitions(): array
     {
-        $ok = $denied = 0;
-        foreach ($this->reports->needingDefinition() as $r) {
+        $ok = 0;
+        $why = [];
+        foreach ($this->reports->needingDefinition((int) ($this->cfg['retry_denied_hours'] ?? 6)) as $r) {
             $def = $this->pbi->reportDefinition($r['workspace_id'], $r['id']);
+            $error = null;
             if ($def === null) {
-                $denied++;
+                $error = $this->pbi->lastError() ?? 'non accessibile';
+                $why[$error] = ($why[$error] ?? 0) + 1;
             } else {
                 $this->reports->saveDefinition($r['id'], $def);
                 $ok++;
             }
-            $this->reports->touchDefinitionFetched($r['id'], now_iso());
+            $this->reports->touchDefinitionFetched($r['id'], now_iso(), $error);
         }
-        return ['definitions_fetched' => $ok, 'definitions_not_accessible' => $denied];
+        return ['definitions_fetched' => $ok] + $this->denied('definitions', $why);
     }
 
     /**

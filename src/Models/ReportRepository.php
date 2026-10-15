@@ -125,28 +125,41 @@ final class ReportRepository extends Repository
     }
 
     /** Report per cui vale la pena (ri)chiedere le pagine a Power BI. */
-    public function needingPages(): array
+    public function needingPages(int $retryHours = 6): array
     {
         return $this->db->all(
             "SELECT id, workspace_id FROM reports
               WHERE is_deleted = 0 AND report_type = 'PowerBIReport'
-                AND (pages_fetched_at IS NULL OR (modified_at IS NOT NULL AND modified_at > pages_fetched_at))"
+                AND (pages_fetched_at IS NULL OR (modified_at IS NOT NULL AND modified_at > pages_fetched_at)
+                     OR (pages_error IS NOT NULL AND pages_fetched_at < ?))",
+            [self::ago($retryHours)]
         );
     }
 
-    /** Report di cui (ri)leggere la definizione: mai letta, oppure modificati dopo l'ultima lettura. */
-    public function needingDefinition(): array
+    /**
+     * Report di cui (ri)leggere la definizione: mai letta, modificati dopo l'ultima lettura,
+     * oppure rifiutati da Power BI più di $retryHours ore fa (i permessi possono essere cambiati nel frattempo).
+     */
+    public function needingDefinition(int $retryHours = 6): array
     {
         return $this->db->all(
             "SELECT id, workspace_id FROM reports
               WHERE is_deleted = 0 AND report_type = 'PowerBIReport'
-                AND (definition_fetched_at IS NULL OR (modified_at IS NOT NULL AND modified_at > definition_fetched_at))"
+                AND (definition_fetched_at IS NULL OR (modified_at IS NOT NULL AND modified_at > definition_fetched_at)
+                     OR (definition_error IS NOT NULL AND definition_fetched_at < ?))",
+            [self::ago($retryHours)]
         );
     }
 
-    public function touchDefinitionFetched(string $reportId, string $now): void
+    /** $error = null: letta; altrimenti il motivo del rifiuto (si riproverà). */
+    public function touchDefinitionFetched(string $reportId, string $now, ?string $error = null): void
     {
-        $this->db->run('UPDATE reports SET definition_fetched_at = ? WHERE id = ?', [$now, $reportId]);
+        $this->db->run('UPDATE reports SET definition_fetched_at = ?, definition_error = ? WHERE id = ?', [$now, $error, $reportId]);
+    }
+
+    private static function ago(int $hours): string
+    {
+        return gmdate('Y-m-d\TH:i:s\Z', time() - $hours * 3600);
     }
 
     /** Salva pagine e visual letti dalla definizione del report. */
@@ -158,9 +171,9 @@ final class ReportRepository extends Repository
         });
     }
 
-    public function touchPagesFetched(string $reportId, string $now): void
+    public function touchPagesFetched(string $reportId, string $now, ?string $error = null): void
     {
-        $this->db->run('UPDATE reports SET pages_fetched_at = ? WHERE id = ?', [$now, $reportId]);
+        $this->db->run('UPDATE reports SET pages_fetched_at = ?, pages_error = ? WHERE id = ?', [$now, $error, $reportId]);
     }
 
     public function activeIds(): array

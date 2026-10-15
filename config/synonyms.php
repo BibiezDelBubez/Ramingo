@@ -7,7 +7,7 @@
  */
 return [
     'groups' => [
-        ['vendite', 'vendita', 'venduto', 'sales', 'sell', 'sellout', 'sell-in', 'fatturato', 'ricavi', 'revenue', 'ordini'],
+        ['vendite', 'vendita', 'venduto', 'sales', 'sell', 'sellout', 'sell-in', 'fatturato', 'ricavi', 'revenue'], // «ordini» tolto: nei trasporti un ordine non è una vendita
         ['regione', 'regioni', 'region', 'regional', 'area', 'zona', 'territorio', 'geografia', 'provincia', 'nazione', 'country', 'mappa'],
         ['cliente', 'clienti', 'customer', 'customers', 'account', 'anagrafica'],
         ['prodotto', 'prodotti', 'product', 'articolo', 'articoli', 'sku', 'item', 'catalogo'],

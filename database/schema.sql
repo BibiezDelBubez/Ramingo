@@ -223,7 +223,8 @@ CREATE TABLE IF NOT EXISTS search_docs (
     entity_id   TEXT NOT NULL,
     title       TEXT NOT NULL,
     keywords    TEXT NOT NULL DEFAULT '',  -- area, workspace, tag, KPI
-    body        TEXT NOT NULL DEFAULT '',  -- descrizioni, pagine, tabelle, misure
+    body        TEXT NOT NULL DEFAULT '',  -- descrizioni, pagine, titoli dei grafici, glossario
+    tech        TEXT NOT NULL DEFAULT '',  -- nomi tecnici del modello dati: tabelle, colonne, misure
     PRIMARY KEY (entity_type, entity_id)
 );
 -- La tabella virtuale FTS5 "search_fts" viene creata da bin/migrate.php
@@ -330,4 +331,25 @@ CREATE TABLE IF NOT EXISTS dataset_refreshes (
     has_history         INTEGER NOT NULL DEFAULT 0, -- 0 = nessun aggiornamento registrato (es. DirectQuery)
     accessible          INTEGER NOT NULL DEFAULT 1, -- 0 = Ramingo-Sync non è membro del workspace del modello
     checked_at          TEXT NOT NULL
+);
+
+-- Ricerche fatte nel catalogo, SENZA sapere chi le ha fatte: servono all'amministratore
+-- per vedere cosa la gente cerca e non trova (tag, descrizioni o sinonimi mancanti).
+CREATE TABLE IF NOT EXISTS search_log (
+    id          INTEGER PRIMARY KEY,
+    query       TEXT NOT NULL,
+    normalized  TEXT NOT NULL,
+    results     INTEGER NOT NULL,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_search_log_norm ON search_log(normalized, created_at);
+
+-- Sinonimi di ricerca, modificabili da Amministrazione → Sinonimi di ricerca.
+-- Alla prima apertura si riempie con i gruppi di config/synonyms.php.
+CREATE TABLE IF NOT EXISTS synonym_groups (
+    id         INTEGER PRIMARY KEY,
+    words      TEXT NOT NULL,          -- parole separate da virgola; la prima è il nome del concetto
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    updated_by TEXT,
+    updated_at TEXT
 );

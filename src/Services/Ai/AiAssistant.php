@@ -138,7 +138,19 @@ final class AiAssistant
             return $reply;
         } catch (AiException $e) {
             $this->log->log($userId, $owner, $cfg->provider, $cfg->model, $purpose, $entityId, false, $e->getMessage());
-            throw $e;
+            // La chiave personale non funziona (crediti finiti, chiave scaduta…): si prova quella aziendale, se c'è
+            $company = $owner === 'personal' ? $this->connections->company() : null;
+            if ($company === null) {
+                throw $e;
+            }
+            try {
+                $reply = $this->connections->provider($company)->complete($system, $prompt, $maxTokens);
+                $this->log->log($userId, 'company', $company->provider, $company->model, $purpose, $entityId, true, null);
+                return $reply;
+            } catch (AiException $e2) {
+                $this->log->log($userId, 'company', $company->provider, $company->model, $purpose, $entityId, false, $e2->getMessage());
+                throw new AiException('La tua chiave AI non funziona (' . $e->getMessage() . ') e nemmeno quella aziendale (' . $e2->getMessage() . ').');
+            }
         }
     }
 

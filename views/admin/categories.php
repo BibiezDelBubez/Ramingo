@@ -67,7 +67,7 @@ $kinds = Ramingo\Models\CatalogRepository::KINDS;
                 if (!$wsItems) { continue; }
                 $wsArea  = $w['area_id'] ? (int) $w['area_id'] : null;
                 $todo    = count(array_filter($wsItems, static fn ($it) => $it['own_area_id'] === null && $wsArea === null)); ?>
-                <details class="rg-group-ws" data-filter-text="<?= e(mb_strtolower($w['name'] . ' ' . implode(' ', array_column($wsItems, 'name')))) ?>" <?= $todo ? 'open' : '' ?>>
+                <details class="rg-group-ws" data-filter-text="<?= e(mb_strtolower($w['name'] . ' ' . implode(' ', array_column($wsItems, 'name')))) ?>" data-filter-ws="<?= e(mb_strtolower($w['name'])) ?>" <?= $todo ? 'open' : '' ?>>
                     <summary>
                         <span class="rg-group-ws-name"><i class="fa-solid fa-cloud rg-ico-ws" aria-hidden="true"></i><?= e($w['name']) ?></span>
                         <span class="small text-secondary">workspace Power BI · <?= count($wsItems) ?> report</span>
@@ -79,7 +79,7 @@ $kinds = Ramingo\Models\CatalogRepository::KINDS;
                     </div>
                     <ul class="rg-group-items">
                     <?php foreach ($wsItems as $it): $own = $it['own_area_id'] !== null ? (int) $it['own_area_id'] : null; ?>
-                        <li>
+                        <li data-filter-name="<?= e(mb_strtolower($it['name'])) ?>">
                             <span class="flex-grow-1"><?= e($it['name']) ?> <span class="text-secondary small">· <?= e($kinds[$it['kind']] ?? $it['kind']) ?></span></span>
                             <?= $view->partial('partials/assign_select', ['kind' => $it['entity_type'], 'id' => $it['id'], 'current' => $own, 'flat' => $flat, 'csrf' => $csrf,
                                 'inherit' => $wsArea !== null ? ($paths[$wsArea] ?? null) : null]) ?>

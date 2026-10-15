@@ -53,9 +53,19 @@ final class SearchIndexer
             return;
         }
         $keywords = [$r['ws'], $r['area'], $r['parent_area'], ...$this->tags('report', $id), ...$this->annotations('report', $id, ['kpi', 'audience'])];
+        $usage = \Ramingo\Services\Catalog\ReportUsage::fromRows(
+            $this->db->all('SELECT fields_json FROM report_visuals WHERE report_id = ?', [$id])
+        );
+        // Modello condiviso da più report (es. «Master») e campi usati da QUESTO report sconosciuti:
+        // tutto ciò che viene dal modello non distingue un report dall'altro («vendite» → «fatturato» → tutti).
+        // Lo si tiene, ma solo tra i nomi tecnici: chi lo trova lì finisce tra i risultati deboli, in una sezione chiusa.
+        $shared = $r['dataset_id'] && (int) $this->db->value(
+            'SELECT COUNT(*) FROM reports WHERE dataset_id = ? AND is_deleted = 0', [$r['dataset_id']]) > 1;
+        $vague = $shared && !$usage->known();
+        $tech = $vague ? [$r['dataset_description']] : [];
         $body = [
             $r['description'],
-            $r['dataset_description'],
+            $vague ? null : $r['dataset_description'],
             $r['ws_description'],
             ...$this->annotations('report', $id, ['description', 'summary', 'notes', 'ai_description']),
             ...$this->column('SELECT display_name FROM report_pages WHERE report_id = ?', [$id]),
@@ -64,9 +74,6 @@ final class SearchIndexer
         if ($r['dataset_id']) {
             // Con un modello condiviso (es. «Master») si indicizza solo ciò che QUESTO report usa davvero:
             // altrimenti cercando «turnover» uscirebbero tutti i report costruiti sullo stesso modello.
-            $usage = \Ramingo\Services\Catalog\ReportUsage::fromRows(
-                $this->db->all('SELECT fields_json FROM report_visuals WHERE report_id = ?', [$id])
-            );
             $tables = array_filter(
                 $this->db->all('SELECT name, description FROM dataset_tables WHERE dataset_id = ? AND is_hidden = 0', [$r['dataset_id']]),
                 static fn ($t) => $usage->usesTable($t['name'])
@@ -82,20 +89,23 @@ final class SearchIndexer
                     static fn ($x) => $usage->usesColumn($x['t'], $x['c'])
                 ), 'c'),
             ];
-            $body = array_merge($body, ...array_values($names));
-            $body = array_merge($body, array_column($tables, 'description'));
+            $tech = array_merge($tech, ...array_values($names));
+            $vague ? array_push($tech, ...array_column($tables, 'description'))
+                   : array_push($body, ...array_column($tables, 'description'));
             // nomi comprensibili e descrizioni del glossario: si trova "vendite al dettaglio" anche se la tabella si chiama VaGazTrrr
             foreach ($names as $kind => $list) {
                 foreach ($list as $name) {
                     $g = $this->glossary->find($kind, (string) $name);
-                    if ($g) {
+                    if ($g && $vague) {
+                        array_push($tech, $g['label'], $g['description']);
+                    } elseif ($g) {
                         $keywords[] = $g['label'];
                         $body[] = $g['description'];
                     }
                 }
             }
         }
-        $this->put('report', $id, $r['name'], $keywords, $body);
+        $this->put('report', $id, $r['name'], $keywords, $body, $tech);
     }
 
     public function indexDashboard(string $id): void
@@ -117,7 +127,7 @@ final class SearchIndexer
         $this->put('dashboard', $id, $d['name'], $keywords, $body);
     }
 
-    private function put(string $type, string $id, string $title, array $keywords, array $body): void
+    private function put(string $type, string $id, string $title, array $keywords, array $body, array $tech = []): void
     {
         $join = static fn (array $parts) => Text::normalize(implode(' ', array_filter($parts, static fn ($p) => $p !== null && $p !== '')));
         // I nomi tecnici tipo "TotaleVendite" o "Sales_Region" vengono spezzati in parole.
@@ -125,7 +135,7 @@ final class SearchIndexer
             static fn ($p) => $p === null ? null : preg_replace(['~([a-z])([A-Z])~', '~[_\.\-]+~'], ['$1 $2', ' '], (string) $p),
             $parts
         );
-        $this->index->put($type, $id, $join($split([$title])), $join($split($keywords)), $join($split($body)));
+        $this->index->put($type, $id, $join($split([$title])), $join($split($keywords)), $join($split($body)), $join($split($tech)));
     }
 
     private function column(string $sql, array $params): array

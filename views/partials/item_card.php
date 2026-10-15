@@ -21,7 +21,7 @@ $open  = $c['app_url'] ?: $c['web_url'];
             <?= $view->partial('partials/source_badge', ['source' => Ramingo\Domain\Source::Auto]) ?>
             Trovato perché:
             <?php foreach ($c['why'] as $w): ?>
-                <span><strong><?= e($w['concept']) ?></strong> in <?= e(implode(', ', $w['fields'])) ?></span>
+                <span class="rg-why-item"><strong><?= e($w['concept']) ?></strong> in <?= e(implode(', ', $w['fields'])) ?></span>
             <?php endforeach ?>
         </div>
     <?php endif ?>

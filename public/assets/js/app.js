@@ -45,42 +45,88 @@
         });
     });
 
+    // Sinonimi di ricerca: cerca una parola tra i gruppi
+    var synFind = document.querySelector('[data-syn-find]');
+    if (synFind) {
+        synFind.addEventListener('input', function () {
+            var q = synFind.value.trim().toLowerCase();
+            document.querySelectorAll('[data-syn-row]').forEach(function (row) {
+                row.hidden = q !== '' && row.querySelector('input').value.toLowerCase().indexOf(q) === -1;
+            });
+        });
+        synFind.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    }
+
     // Pagine con operazioni in corso (es. sincronizzazione): ricarica automatica
     var auto = document.querySelector('[data-autorefresh]');
     if (auto) {
         setTimeout(function () { window.location.reload(); }, (parseInt(auto.dataset.autorefresh, 10) || 5) * 1000);
     }
 
-    // Filtri a tendina del catalogo (<details data-drop>): uno aperto alla volta,
-    // chiusura con clic fuori o Esc, casella per filtrare le voci lunghe
-    var drops = document.querySelectorAll('details[data-drop]');
-    drops.forEach(function (d) {
-        d.addEventListener('toggle', function () {
-            if (!d.open) return;
-            drops.forEach(function (o) { if (o !== d) o.open = false; });
-            var find = d.querySelector('[data-drop-find]');
-            if (find) find.focus();
-        });
-        var find = d.querySelector('[data-drop-find]');
-        if (find) {
-            find.addEventListener('input', function () {
-                var q = find.value.trim().toLowerCase();
-                d.querySelectorAll('[data-drop-item]').forEach(function (a) {
-                    a.hidden = q !== '' && a.textContent.toLowerCase().indexOf(q) === -1;
-                });
-            });
+    // Colonna filtri: elenchi lunghi accorciati («Mostra tutti») e casella per cercarvi dentro
+    function showList(box, all) {
+        box.querySelectorAll('[data-extra]').forEach(function (item) { item.hidden = !all; });
+        var more = box.querySelector('[data-facet-more]');
+        if (more) {
+            if (!more.dataset.more) more.dataset.more = more.textContent;
+            more.textContent = all ? more.dataset.less : more.dataset.more;
+            more.dataset.open = all ? '1' : '';
+            more.hidden = false;
         }
+    }
+    document.querySelectorAll('[data-facet-more]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            showList(btn.closest('details'), btn.dataset.open !== '1');
+            stickyCheck();
+        });
     });
-    if (drops.length) {
-        document.addEventListener('click', function (e) {
-            drops.forEach(function (d) { if (d.open && !d.contains(e.target)) d.open = false; });
+    document.querySelectorAll('[data-facet-find]').forEach(function (input) {
+        var box = input.closest('details');
+        input.addEventListener('input', function () {
+            var q = input.value.trim().toLowerCase();
+            if (q === '') { // si torna all'elenco accorciato
+                box.querySelectorAll('[data-facet-item]').forEach(function (item) { item.hidden = item.hasAttribute('data-extra'); });
+                showList(box, false);
+            } else {        // si cerca in tutte le voci, anche quelle nascoste
+                box.querySelectorAll('[data-facet-item]').forEach(function (item) {
+                    item.hidden = item.textContent.toLowerCase().indexOf(q) === -1;
+                });
+                var more = box.querySelector('[data-facet-more]');
+                if (more) more.hidden = true;
+            }
+            stickyCheck();
         });
-        document.addEventListener('keydown', function (e) {
-            if (e.key !== 'Escape') return;
-            drops.forEach(function (d) {
-                if (d.open) { d.open = false; d.querySelector('summary').focus(); }
-            });
-        });
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    });
+
+    // La colonna resta ferma solo se ci sta tutta nello schermo: altrimenti scorre con la pagina
+    var sideCol = document.querySelector('.rg-browse-side');
+    function stickyCheck() {
+        if (!sideCol) return;
+        sideCol.classList.remove('too-tall');
+        var top = parseFloat(getComputedStyle(sideCol).top) || 0;
+        if (sideCol.offsetHeight + top > window.innerHeight) sideCol.classList.add('too-tall');
+    }
+    if (sideCol) {
+        stickyCheck();
+        window.addEventListener('resize', stickyCheck);
+        sideCol.querySelectorAll('details').forEach(function (d) { d.addEventListener('toggle', stickyCheck); });
+    }
+
+    // Nascondi / mostra la colonna filtri (su computer); la scelta resta in un cookie
+    var browse = document.querySelector('[data-browse]');
+    function setSide(hidden) {
+        browse.classList.toggle('side-hidden', hidden);
+        document.cookie = 'rg_side=' + (hidden ? 'hidden' : 'shown') + '; path=/; max-age=31536000; SameSite=Lax';
+        if (!hidden) stickyCheck();
+    }
+    document.querySelectorAll('[data-side-hide]').forEach(function (b) { b.addEventListener('click', function () { setSide(true); }); });
+    document.querySelectorAll('[data-side-show]').forEach(function (b) { b.addEventListener('click', function () { setSide(false); }); });
+
+    // Su schermi stretti la colonna filtri parte chiusa (pulsante «Filtri»), se non ci sono filtri attivi
+    var side = document.querySelector('[data-side]');
+    if (side && window.matchMedia('(max-width: 991px)').matches && !side.querySelector('input:checked:not([value=""])')) {
+        side.open = false;
     }
 
     // Pagina iniziale: la ricerca dell'intestazione compare quando quella grande esce dallo schermo
@@ -121,14 +167,22 @@
         var controller = null;
 
         function render(data) {
-            if (!data.results.length) {
+            var scopes = (data.scopes || []).map(function (sc) {
+                return '<a class="rg-suggest-item rg-suggest-scope" href="' + esc(sc.url) + '">'
+                    + '<span class="rg-scope-type">' + esc(sc.type) + '</span> <strong>' + esc(sc.label) + '</strong>'
+                    + ' <span class="rg-scope-n">' + esc(sc.n) + ' report</span></a>';
+            }).join('');
+            if (scopes) scopes = '<div class="rg-suggest-group">Vai ai report con</div>' + scopes;
+            if (!data.results.length && scopes) {
+                box.innerHTML = scopes;
+            } else if (!data.results.length) {
                 box.innerHTML = '<div class="rg-suggest-empty">Nessun risultato immediato: premi Invio per la ricerca completa.</div>';
             } else {
                 var head = data.concepts.length
                     ? '<div class="rg-suggest-head"><span class="src-badge src-auto"><i class="fa-solid fa-wand-magic-sparkles"></i> Interpretazione automatica</span> '
                       + data.concepts.map(function (c) { return esc(c.label); }).join(data.mode === 'all' ? ' + ' : ' / ') + '</div>'
                     : '';
-                box.innerHTML = head + data.results.map(function (r) {
+                box.innerHTML = scopes + head + data.results.map(function (r) {
                     return '<a class="rg-suggest-item" href="' + esc(r.url) + '"><strong>' + esc(r.name) + '</strong>'
                         + '<span>' + esc(r.kind) + ' · ' + esc(r.workspace) + '</span></a>';
                 }).join('');

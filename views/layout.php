@@ -12,10 +12,15 @@
     <link rel="stylesheet" href="<?= asset('fontawesome/css/all.min.css') ?>">
     <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
 </head>
+<?php
+// Catalogo e ricerca usano tutta la larghezza (filtri a sinistra, più colonne di report sugli schermi larghi);
+// le pagine da leggere (scheda report, amministrazione) restano centrate. L'intestazione è sempre a tutta larghezza.
+$box = !empty($homeSearch) ? 'rg-wide' : 'container-xl';
+?>
 <body data-base="<?= e(url()) ?>">
 <header class="rg-header">
-    <div class="container-xl d-flex flex-wrap align-items-center gap-3 py-2">
-        <a class="rg-brand" href="<?= url() ?>"><img src="<?= asset('img/logo.svg') ?>" alt="" width="34" height="33"> <?= e($appName) ?></a>
+    <div class="rg-wide d-flex flex-wrap align-items-center gap-3 py-2">
+        <a class="rg-brand" href="<?= url() ?>"><img src="<?= asset(!empty($logoIntro) ? 'img/logo_animato.svg' : 'img/logo.svg') ?>" alt="" width="34" height="33"> <?= e($appName) ?></a>
         <?php /* Sulla pagina iniziale questa ricerca resta nascosta finché quella grande è visibile (vedi app.js) */ ?>
         <form class="rg-search flex-grow-1<?= !empty($homeSearch) ? ' rg-search-docked' : '' ?>" action="<?= url('cerca') ?>" method="get" role="search" autocomplete="off" data-suggest>
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -40,14 +45,14 @@
 </header>
 <?php if (!empty($homeSearch)) echo $view->partial('partials/home_search', get_defined_vars()) ?>
 
-<main class="container-xl py-4">
+<main class="<?= $box ?> py-4">
     <?php foreach ($flashes as $f): ?>
         <div class="alert alert-<?= e($f['type']) ?>"><?= e($f['message']) ?></div>
     <?php endforeach ?>
     <?= $content ?>
 </main>
 
-<footer class="container-xl pb-4 small text-secondary">
+<footer class="<?= $box ?> pb-4 small text-secondary">
     <?= $view->partial('partials/source_legend') ?>
 </footer>
 <script src="<?= asset('js/app.js') ?>"></script>

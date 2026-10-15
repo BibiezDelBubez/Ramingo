@@ -51,20 +51,45 @@ final class CatalogRepository extends Repository
     ];
 
     /**
-     * @param array{area?:string, area_ids?:int[], workspace?:string, kind?:string, endorsement?:string, tag?:string} $f
-     * @return array{items: array, total: int}
+     * Filtri accettati da all(), find() e facets() (tutti facoltativi):
+     *  - area_ids int[]   categorie scelte, già espanse con le sottocategorie   } in O tra loro
+     *  - area_none bool   anche «Da classificare»                               }
+     *  - ws string[]      workspace (in O)
+     *  - kind string[]    tipo (in O)
+     *  - appr string[]    approvazione Power BI (in O)
+     *  - tags string[]    tag scritti a mano: l'elemento deve averli TUTTI (in E)
+     *  - fresh string     week | month | old  (data dell'ultimo aggiornamento dei dati)
+     *  - keys string[]    solo questi elementi («tipo:id», es. risultati di una ricerca)
      */
-    public function find(array $f, int $limit, int $offset = 0, string $sort = 'name'): array
+    public const FRESH_DAYS = ['week' => 7, 'month' => 30, 'old' => 90];
+
+    /** Tutti gli elementi che rispettano i filtri, già ordinati (la paginazione la fa chi chiama). */
+    public function all(array $f, string $sort = 'name'): array
     {
         [$where, $params] = $this->where($f);
-        $order = match ($sort) {
+        $rows = $this->db->all(self::BASE . $where . ' ORDER BY ' . self::order($sort), $params);
+        if ($sort === 'relevance' && !empty($f['keys'])) { // stesso ordine dei risultati della ricerca
+            $pos = array_flip(array_values($f['keys']));
+            usort($rows, static fn ($a, $b) => ($pos[$a['entity_type'] . ':' . $a['id']] ?? PHP_INT_MAX)
+                <=> ($pos[$b['entity_type'] . ':' . $b['id']] ?? PHP_INT_MAX));
+        }
+        return $rows;
+    }
+
+    /** @return array{items: array, total: int} */
+    public function find(array $f, int $limit, int $offset = 0, string $sort = 'name'): array
+    {
+        $rows = $this->all($f, $sort);
+        return ['items' => array_slice($rows, $offset, $limit), 'total' => count($rows)];
+    }
+
+    private static function order(string $sort): string
+    {
+        return match ($sort) {
             'recent' => 'data_refreshed_at IS NULL, data_refreshed_at DESC, name COLLATE NOCASE',
             'area'   => 'area_id IS NULL, area_sort, area_name, name COLLATE NOCASE',
             default  => 'name COLLATE NOCASE',
         };
-        $total = (int) $this->db->value('SELECT COUNT(*) FROM (' . self::BASE . $where . ')', $params);
-        $items = $this->db->all(self::BASE . $where . " ORDER BY $order LIMIT " . (int) $limit . ' OFFSET ' . (int) $offset, $params);
-        return ['items' => $items, 'total' => $total];
     }
 
     /** Elementi per id (mantiene l'ordine dato, es. ranking della ricerca). */
@@ -104,9 +129,12 @@ final class CatalogRepository extends Repository
     }
 
     /**
-     * Conteggi per la barra dei filtri. Ogni filtro conta gli elementi che rispettano
-     * GLI ALTRI filtri attivi: così ogni scelta proposta porta ad almeno un risultato.
-     * @param array $f stessi filtri di find()
+     * Conteggi per la colonna dei filtri.
+     *  - Categoria, workspace, tipo, approvazione, dati aggiornati: ognuno conta gli elementi che rispettano
+     *    GLI ALTRI filtri attivi (si sceglie in O dentro lo stesso filtro).
+     *  - Tag: conta gli elementi che rispettano TUTTI i filtri, tag scelti compresi (i tag si combinano in E):
+     *    scelto «benelux», ogni altro tag mostra quanti report hanno anche quello.
+     * @param array $f stessi filtri di all()
      */
     public function facets(array $f = []): array
     {
@@ -115,54 +143,88 @@ final class CatalogRepository extends Repository
             return ['(' . self::BASE . $where . ')', $params];
         };
 
-        [$sql, $p] = $from(['area', 'area_ids']);
+        [$sql, $p] = $from(['area_ids', 'area_none']);
         $areas = $this->db->all(
             "SELECT area_id AS value, COALESCE(area_name, 'Da classificare') AS label, area_icon AS icon, COUNT(*) AS n
                FROM $sql GROUP BY area_id ORDER BY area_id IS NULL, MIN(area_sort), label", $p);
 
-        [$sql, $p] = $from(['workspace']);
+        [$sql, $p] = $from(['ws']);
         $workspaces = $this->db->all(
             "SELECT workspace_id AS value, workspace_name AS label, COUNT(*) AS n FROM $sql
               GROUP BY workspace_id ORDER BY label COLLATE NOCASE", $p);
 
         [$sql, $p] = $from(['kind']);
-        $kinds = $this->db->all("SELECT kind AS value, COUNT(*) AS n FROM $sql GROUP BY kind", $p);
+        $kinds = $this->db->all("SELECT kind AS value, COUNT(*) AS n FROM $sql GROUP BY kind ORDER BY n DESC", $p);
 
-        [$sql, $p] = $from(['endorsement']);
+        [$sql, $p] = $from(['appr']);
         $endorsements = $this->db->all(
             "SELECT endorsement AS value, COUNT(*) AS n FROM $sql WHERE endorsement IS NOT NULL GROUP BY endorsement", $p);
 
-        // Solo i tag scritti a mano: quelli automatici non sono mostrati ai colleghi
-        [$sql, $p] = $from(['tag']);
+        [$sql, $p] = $from([]);
         $tags = $this->db->all(
             "SELECT t.tag AS value, t.tag AS label, COUNT(*) AS n
                FROM $sql i JOIN tags t ON t.entity_type = i.entity_type AND t.entity_id = i.id AND t.source = 'manual'
-              GROUP BY t.tag ORDER BY n DESC, t.tag LIMIT 60", $p);
+              GROUP BY t.tag ORDER BY n DESC, t.tag", $p);
 
-        return compact('areas', 'workspaces', 'kinds', 'endorsements', 'tags');
+        [$sql, $p] = $from(['fresh']);
+        $c = self::cutoffs();
+        $row = $this->db->one(
+            "SELECT SUM(data_refreshed_at >= ?) AS week, SUM(data_refreshed_at >= ?) AS month, SUM(data_refreshed_at < ?) AS old FROM $sql",
+            [$c['week'], $c['month'], $c['old'], ...$p]) ?? [];
+        $fresh = array_map(static fn ($v) => (int) $v, array_merge(['week' => 0, 'month' => 0, 'old' => 0], array_filter($row, 'is_numeric')));
+
+        return compact('areas', 'workspaces', 'kinds', 'endorsements', 'tags', 'fresh');
+    }
+
+    /** Soglie di data per il filtro «Dati aggiornati», in UTC come le date di Power BI. */
+    private static function cutoffs(): array
+    {
+        return array_map(static fn (int $days) => gmdate('Y-m-d\TH:i:s\Z', time() - $days * 86400), self::FRESH_DAYS);
     }
 
     private function where(array $f): array
     {
         $sql = [];
         $params = [];
-        if (($f['area'] ?? '') === 'none') {
-            $sql[] = 'area_id IS NULL';
-        } elseif (!empty($f['area_ids'])) { // categoria + sottocategorie
+
+        $area = [];
+        if (!empty($f['area_ids'])) { // categorie + sottocategorie
             // interi già validati scritti direttamente: dietro la vista item_area SQLite
             // non converte i parametri testuali, e '2' non sarebbe uguale a 2
-            $sql[] = 'area_id IN (' . implode(', ', array_map('intval', $f['area_ids'])) . ')';
+            $area[] = 'area_id IN (' . implode(', ', array_map('intval', $f['area_ids'])) . ')';
         }
-        foreach (['workspace' => 'workspace_id', 'kind' => 'kind', 'endorsement' => 'endorsement'] as $key => $col) {
+        if (!empty($f['area_none'])) {
+            $area[] = 'area_id IS NULL';
+        }
+        if ($area) {
+            $sql[] = '(' . implode(' OR ', $area) . ')';
+        }
+
+        foreach (['ws' => 'workspace_id', 'kind' => 'kind', 'appr' => 'endorsement'] as $key => $col) {
             if (!empty($f[$key])) {
-                $sql[] = "$col = ?";
-                $params[] = $f[$key];
+                $sql[] = "$col IN (" . Database::placeholders($f[$key]) . ')';
+                array_push($params, ...array_values($f[$key]));
             }
         }
-        if (!empty($f['tag'])) {
+
+        foreach ($f['tags'] ?? [] as $tag) {
             $sql[] = "EXISTS (SELECT 1 FROM tags t WHERE t.entity_type = items.entity_type AND t.entity_id = items.id
                               AND t.source = 'manual' AND t.tag = ?)";
-            $params[] = mb_strtolower((string) $f['tag']);
+            $params[] = mb_strtolower((string) $tag);
+        }
+
+        if (!empty($f['fresh']) && isset(self::FRESH_DAYS[$f['fresh']])) {
+            $sql[] = $f['fresh'] === 'old' ? 'data_refreshed_at < ?' : 'data_refreshed_at >= ?';
+            $params[] = self::cutoffs()[$f['fresh']];
+        }
+
+        if (array_key_exists('keys', $f)) {
+            if (!$f['keys']) {
+                $sql[] = '0';
+            } else {
+                $sql[] = "(entity_type || ':' || id) IN (" . Database::placeholders($f['keys']) . ')';
+                array_push($params, ...array_values($f['keys']));
+            }
         }
         return [$sql ? ' WHERE ' . implode(' AND ', $sql) : '', $params];
     }

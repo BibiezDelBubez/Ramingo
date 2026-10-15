@@ -55,12 +55,8 @@ final class AiController extends BaseController
         } catch (AiException $e) {
             $aiError = $e->getMessage();
         }
-        $this->render('search/index', $data + [
-            'title'    => "Ricerca: $q",
-            'ai'       => $this->app->aiAssistant()->describeConnection($this->user),
-            'aiAnswer' => $aiAnswer,
-            'aiError'  => $aiError,
-        ]);
+        // stessa pagina dei risultati di ricerca, con la risposta dell'AI in cima
+        $this->render('catalog/index', $this->catalogPage($q, 'cerca', ['aiAnswer' => $aiAnswer, 'aiError' => $aiError]));
     }
 
     /** GET /ai/impostazioni */

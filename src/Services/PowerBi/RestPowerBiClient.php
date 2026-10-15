@@ -22,6 +22,13 @@ final class RestPowerBiClient implements PowerBiClient
     ) {
     }
 
+    private ?string $lastError = null;
+
+    public function lastError(): ?string
+    {
+        return $this->lastError;
+    }
+
     public function modifiedWorkspaceIds(?string $since, bool $excludePersonal): array
     {
         $query = [
@@ -64,6 +71,7 @@ final class RestPowerBiClient implements PowerBiClient
             $data = $this->get(sprintf('groups/%s/reports/%s/pages', rawurlencode($workspaceId), rawurlencode($reportId)));
         } catch (HttpException $e) {
             if (in_array($e->status, [401, 403, 404], true)) {
+                $this->lastError = self::reason($e);
                 return null; // il service principal non è membro del workspace
             }
             throw $e;
@@ -81,6 +89,7 @@ final class RestPowerBiClient implements PowerBiClient
             $data = $this->get(sprintf('groups/%s/datasets/%s/refreshes?%%24top=10', rawurlencode($workspaceId), rawurlencode($datasetId)));
         } catch (HttpException $e) {
             if (in_array($e->status, [401, 403, 404], true)) {
+                $this->lastError = self::reason($e);
                 return null; // il service principal non è membro del workspace del modello
             }
             throw $e;
@@ -101,13 +110,18 @@ final class RestPowerBiClient implements PowerBiClient
         $url = rtrim($this->cfg['api_base'], '/') . sprintf('/groups/%s/reports/%s/Export?downloadType=LiveConnect', rawurlencode($workspaceId), rawurlencode($reportId));
         $res = $this->http->request('GET', $url, ['Authorization' => 'Bearer ' . $this->tokens->token()]);
         if ($res['status'] !== 200 || !str_starts_with($res['body'], "PK")) { // un .pbix è un archivio zip
-            return null; // nessun accesso al workspace, download non consentito, o report non esportabile
+            // nessun accesso al workspace, download non consentito, o report non esportabile
+            $json = json_decode((string) $res['body'], true);
+            $code = is_array($json) ? ($json['error']['code'] ?? $json['code'] ?? null) : null;
+            $this->lastError = 'HTTP ' . $res['status'] . (is_string($code) ? ' – ' . $code : ($res['status'] === 200 ? ' – il file ricevuto non è un .pbix' : ''));
+            return null;
         }
         $tmp = tempnam(sys_get_temp_dir(), 'ramingo_pbix_');
         try {
             file_put_contents($tmp, $res['body']);
             return (new \Ramingo\Services\Definition\ReportDefinitionParser())->parsePbix($tmp);
-        } catch (\RuntimeException) {
+        } catch (\RuntimeException $e) {
+            $this->lastError = 'struttura non leggibile: ' . $e->getMessage();
             return null;
         } finally {
             @unlink($tmp);
@@ -141,5 +155,13 @@ final class RestPowerBiClient implements PowerBiClient
             throw new HttpException(sprintf('Power BI %s %s -> HTTP %d: %s', $method, strtok($path, '?'), $res['status'], $detail), $res['status']);
         }
         return is_array($res['json']) ? $res['json'] : [];
+    }
+
+    /** «HTTP 401 – PowerBINotAuthorizedException»: codice di Power BI, senza dettagli lunghi. */
+    private static function reason(HttpException $e): string
+    {
+        $msg = $e->getMessage();
+        $code = preg_match('~HTTP \d+: ([A-Za-z]+)~', $msg, $m) ? $m[1] : null;
+        return 'HTTP ' . $e->status . ($code ? ' – ' . $code : '');
     }
 }

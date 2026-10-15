@@ -45,4 +45,7 @@ interface PowerBiClient
      * @return array<int, array{status:string, startTime:?string, endTime:?string}>|null  null = non accessibile
      */
     public function datasetRefreshes(string $workspaceId, string $datasetId): ?array;
+
+    /** Motivo dell'ultimo «non accessibile» (es. «HTTP 401 – PowerBINotAuthorizedException»), per il riepilogo. */
+    public function lastError(): ?string;
 }

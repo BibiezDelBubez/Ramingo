@@ -14,6 +14,14 @@
         <h2 class="h6 mb-1"><i class="fa-solid fa-book"></i> Glossario</h2>
         <span class="small text-secondary">Nomi comprensibili per tabelle, colonne e misure dai nomi tecnici.</span>
     </a>
+    <a class="rg-card rg-admin-link" href="<?= url('admin/sinonimi') ?>">
+        <h2 class="h6 mb-1"><i class="fa-solid fa-arrows-left-right"></i> Sinonimi di ricerca</h2>
+        <span class="small text-secondary">Parole che la ricerca tratta come uguali: «HR» trova anche «personale».</span>
+    </a>
+    <a class="rg-card rg-admin-link" href="<?= url('admin/ricerche') ?>">
+        <h2 class="h6 mb-1"><i class="fa-solid fa-magnifying-glass"></i> Ricerche</h2>
+        <span class="small text-secondary">Cosa cercano i colleghi e cosa non trovano: indica quali tag o descrizioni mancano.</span>
+    </a>
 </div>
 
 <div class="row g-4">

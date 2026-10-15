@@ -13,6 +13,9 @@ $db  = $app->db();
 $addColumns = [
     ['areas', 'parent_id', 'INTEGER REFERENCES areas(id) ON DELETE SET NULL'],
     ['reports', 'definition_fetched_at', 'TEXT'],
+    ['search_docs', 'tech', "TEXT NOT NULL DEFAULT ''"],
+    ['reports', 'pages_error', 'TEXT'],       // motivo dell'ultimo rifiuto di Power BI (si riprova)
+    ['reports', 'definition_error', 'TEXT'],
 ];
 $tableExists = static fn (string $t) => (bool) $db->value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [$t]);
 foreach ($addColumns as [$table, $column, $definition]) {
@@ -28,13 +31,28 @@ foreach ($addColumns as [$table, $column, $definition]) { // database nuovo: tab
         $db->exec("ALTER TABLE $table ADD COLUMN $column $definition");
     }
 }
+// Letture fallite prima che esistesse il nuovo tentativo: si segnano come «da riprovare»
+$db->exec("UPDATE reports SET definition_error = 'da riprovare' WHERE definition_fetched_at IS NOT NULL AND definition_error IS NULL
+           AND NOT EXISTS (SELECT 1 FROM report_visuals v WHERE v.report_id = reports.id)");
+$db->exec("UPDATE reports SET pages_error = 'da riprovare' WHERE pages_fetched_at IS NOT NULL AND pages_error IS NULL
+           AND NOT EXISTS (SELECT 1 FROM report_pages p WHERE p.report_id = reports.id)");
+
 // Icona predefinita delle categorie: non più la cartella, per non confonderle con i workspace di Power BI
 $db->exec("UPDATE areas SET icon = 'fa-solid fa-shapes' WHERE icon = 'fa-solid fa-folder' OR icon IS NULL OR icon = ''");
 echo "Schema applicato.\n";
 
+// Indice full-text della versione precedente (senza la colonna «tech»): si ricrea e si ricostruisce
+$rebuild = false;
+if ($tableExists('search_fts') && !in_array('tech', array_column($db->all('PRAGMA table_info(search_fts)'), 'name'), true)) {
+    $db->exec('DROP TABLE search_fts');
+    $rebuild = true;
+}
 echo SearchRepository::createFtsTable($db)
     ? "Ricerca full-text: FTS5 attivo.\n"
     : "Ricerca full-text: FTS5 non disponibile, uso LIKE (funziona, solo meno raffinato).\n";
+if ($rebuild) {
+    echo 'Indice di ricerca ricostruito: ' . $app->indexer()->rebuildAll() . " elementi.\n";
+}
 
 if (in_array('--seed-areas', $argv, true) && !(int) $db->value('SELECT COUNT(*) FROM areas')) {
     $areas = [

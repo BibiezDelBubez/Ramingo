@@ -16,7 +16,7 @@ final class SearchRepository extends Repository
         return $this->db->hasFts5() && (bool) $this->db->value("SELECT 1 FROM sqlite_master WHERE name = 'search_fts'");
     }
 
-    public function put(string $entityType, string $entityId, string $title, string $keywords, string $body): void
+    public function put(string $entityType, string $entityId, string $title, string $keywords, string $body, string $tech = ''): void
     {
         $this->db->upsert('search_docs', [
             'entity_type' => $entityType,
@@ -24,13 +24,36 @@ final class SearchRepository extends Repository
             'title'       => $title,
             'keywords'    => $keywords,
             'body'        => $body,
+            'tech'        => $tech,
         ], ['entity_type', 'entity_id']);
 
         if ($this->fts()) {
             $key = $entityType . ':' . $entityId;
             $this->db->run('DELETE FROM search_fts WHERE entity_key = ?', [$key]);
-            $this->db->run('INSERT INTO search_fts (entity_key, title, keywords, body) VALUES (?, ?, ?, ?)', [$key, $title, $keywords, $body]);
+            $this->db->run('INSERT INTO search_fts (entity_key, title, keywords, body, tech) VALUES (?, ?, ?, ?, ?)', [$key, $title, $keywords, $body, $tech]);
         }
+    }
+
+    /**
+     * Parole presenti nell'indice (titoli, parole chiave, contenuti) con quante volte compaiono.
+     * Serve a correggere gli errori di battitura. Calcolata una volta per richiesta.
+     * @return array<string, int>
+     */
+    public function vocabulary(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+        $cache = [];
+        foreach ($this->db->all('SELECT title, keywords, body, tech FROM search_docs') as $r) {
+            foreach (preg_split('~\s+~', $r['title'] . ' ' . $r['keywords'] . ' ' . $r['body'] . ' ' . $r['tech'], -1, PREG_SPLIT_NO_EMPTY) as $w) {
+                if (strlen($w) >= 3 && strlen($w) <= 40 && !ctype_digit($w)) {
+                    $cache[$w] = ($cache[$w] ?? 0) + 1;
+                }
+            }
+        }
+        return $cache;
     }
 
     public function clear(): void
@@ -62,9 +85,9 @@ final class SearchRepository extends Repository
             $groups
         );
         $match = implode($all ? ' AND ' : ' OR ', $parts);
-        // pesi bm25: entity_key (ignorata), titolo, parole chiave, contenuti
+        // pesi bm25: entity_key (ignorata), titolo, parole chiave, contenuti, nomi tecnici
         return $this->db->all(
-            'SELECT entity_key, title, keywords, body, -bm25(search_fts, 0.0, 10.0, 5.0, 1.0) AS score
+            'SELECT entity_key, title, keywords, body, tech, -bm25(search_fts, 0.0, 10.0, 5.0, 1.0, 0.3) AS score
                FROM search_fts WHERE search_fts MATCH ? ORDER BY score DESC LIMIT ' . (int) $limit,
             [$match]
         );
@@ -77,13 +100,13 @@ final class SearchRepository extends Repository
         foreach ($groups as $stems) {
             $or = [];
             foreach ($stems as $s) {
-                $or[] = '(title LIKE ? OR keywords LIKE ? OR body LIKE ?)';
-                array_push($params, "%$s%", "%$s%", "%$s%");
+                $or[] = '(title LIKE ? OR keywords LIKE ? OR body LIKE ? OR tech LIKE ?)';
+                array_push($params, "%$s%", "%$s%", "%$s%", "%$s%");
             }
             $clauses[] = '(' . implode(' OR ', $or) . ')';
         }
         $rows = $this->db->all(
-            "SELECT entity_type || ':' || entity_id AS entity_key, title, keywords, body, 0 AS score
+            "SELECT entity_type || ':' || entity_id AS entity_key, title, keywords, body, tech, 0 AS score
                FROM search_docs WHERE " . implode($all ? ' AND ' : ' OR ', $clauses) . ' LIMIT ' . (int) $limit,
             $params
         );
@@ -101,7 +124,7 @@ final class SearchRepository extends Repository
         if (!$db->hasFts5()) {
             return false;
         }
-        $db->exec("CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(entity_key UNINDEXED, title, keywords, body, tokenize = 'unicode61')");
+        $db->exec("CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(entity_key UNINDEXED, title, keywords, body, tech, tokenize = 'unicode61')");
         return true;
     }
 }

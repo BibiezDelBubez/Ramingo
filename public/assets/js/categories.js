@@ -130,9 +130,10 @@
                 // gruppo trovato: aperto, e dentro si vedono solo i report che corrispondono
                 if (q !== '' && !el.hidden && el.tagName === 'DETAILS') {
                     el.open = true;
-                    var wsMatch = el.querySelector('summary').textContent.toLowerCase().indexOf(q) !== -1;
+                    // solo il nome del workspace e quello del report: il testo dei menu (nomi delle categorie) non conta
+                    var wsMatch = (el.dataset.filterWs || '').indexOf(q) !== -1;
                     el.querySelectorAll('.rg-group-items li').forEach(function (li) {
-                        li.hidden = !wsMatch && li.textContent.toLowerCase().indexOf(q) === -1;
+                        li.hidden = !wsMatch && (li.dataset.filterName || '').indexOf(q) === -1;
                     });
                 } else if (q === '') {
                     el.querySelectorAll('.rg-group-items li').forEach(function (li) { li.hidden = false; });

@@ -124,9 +124,22 @@ final class App
         ));
     }
 
+    /**
+     * Vocabolario della ricerca: parole da ignorare dal file config/synonyms.php,
+     * gruppi di sinonimi dal database (modificabili da Amministrazione → Sinonimi di ricerca).
+     */
     public function vocabulary(): array
     {
-        return $this->vocabulary ??= require $this->path('config/synonyms.php');
+        if ($this->vocabulary === null) {
+            $file = require $this->path('config/synonyms.php');
+            try {
+                $file['groups'] = $this->repo(\Ramingo\Models\SynonymRepository::class)->groups($file['groups'] ?? []);
+            } catch (\PDOException) {
+                // tabella non ancora creata (manca bin/migrate.php): si usa il file
+            }
+            $this->vocabulary = $file;
+        }
+        return $this->vocabulary;
     }
 
     public function search(): SearchService

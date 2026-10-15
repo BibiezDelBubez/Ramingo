@@ -50,6 +50,8 @@ return [
         // Quali campi usa ogni report (scarica il report SENZA dati e ne legge la struttura).
         // Come le pagine, richiede che il service principal possa accedere al workspace.
         'fetch_report_definitions'    => true,
+        // Se Power BI rifiuta pagine o struttura (permessi), si riprova dopo queste ore
+        'retry_denied_hours'          => 6,
         // Data dell'ultimo aggiornamento dei DATI di ogni modello semantico (stesso requisito delle pagine).
         'fetch_data_refreshes'        => true,
         'refresh_check_minutes'       => 60,     // ogni modello si ricontrolla al massimo ogni N minuti

@@ -48,8 +48,20 @@ abstract class Controller
             'q'       => (string) $this->request->query('q', ''),
             'debug'   => (bool) $this->app->config()->get('app.debug', false),
             'aiNav'   => (bool) $this->app->config()->get('ai.enabled', false),
+            // logo animato solo alla prima pagina della sessione: ogni filtro ricarica la pagina
+            'logoIntro' => $this->logoIntro(),
         ]);
         exit;
+    }
+
+    /** Vero solo la prima volta nella sessione del browser. */
+    private function logoIntro(): bool
+    {
+        if (Session::get('logo_seen')) {
+            return false;
+        }
+        Session::set('logo_seen', true);
+        return true;
     }
 
     protected function json(mixed $data, int $status = 200): never
