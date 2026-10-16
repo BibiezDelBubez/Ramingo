@@ -15,6 +15,20 @@
             btn.disabled = true;
             var label = btn.querySelector('span');
             if (label) label.textContent = 'Attendere…';
+            // Attese lunghe (AI): logo con le lancette che cercano il nord + testo per i lettori di schermo
+            var wait = form.getAttribute('data-busy-wait');
+            if (wait && !form.querySelector('.rg-wait')) {
+                var box = document.createElement('div');
+                box.className = 'rg-wait';
+                box.setAttribute('role', 'status');
+                var img = document.createElement('img');
+                img.src = document.body.dataset.base.replace(/\/$/, '') + '/assets/img/logo_attesa.svg';
+                img.alt = ''; img.width = 40; img.height = 38;
+                var txt = document.createElement('span');
+                txt.textContent = wait;
+                box.append(img, txt);
+                form.appendChild(box);
+            }
         });
     });
 
@@ -42,6 +56,13 @@
             if (tags.map(function (t) { return t.toLowerCase(); }).indexOf(tag.toLowerCase()) === -1) tags.push(tag);
             input.value = tags.join(', ');
             input.focus();
+        });
+    });
+
+    // Azioni irreversibili: chiedono conferma
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!window.confirm(form.dataset.confirm)) e.preventDefault();
         });
     });
 

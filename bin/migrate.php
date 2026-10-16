@@ -16,6 +16,8 @@ $addColumns = [
     ['search_docs', 'tech', "TEXT NOT NULL DEFAULT ''"],
     ['reports', 'pages_error', 'TEXT'],       // motivo dell'ultimo rifiuto di Power BI (si riprova)
     ['reports', 'definition_error', 'TEXT'],
+    ['reports', 'replaced_by', 'TEXT'],       // eliminato da Power BI: i suoi testi sono stati spostati su questo report
+    ['dashboards', 'replaced_by', 'TEXT'],
 ];
 $tableExists = static fn (string $t) => (bool) $db->value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [$t]);
 foreach ($addColumns as [$table, $column, $definition]) {

@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="453" height="433"
+     viewBox="0 0 453 433">
+
+  <defs>
+    <!-- GRADIENTE SEMICERCHIO SUPERIORE -->
+    <linearGradient id="sunGradient" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffd84a"/>
+      <stop offset="0.48" stop-color="#ffb52f"/>
+      <stop offset="1" stop-color="#ff8727"/>
+    </linearGradient>
+
+    <!-- GRADIENTE SEMICERCHIO INFERIORE -->
+    <linearGradient id="violetGradient" x1="0" y1="0" x2="1" y2="0.85">
+      <stop offset="0" stop-color="#b51cff"/>
+      <stop offset="0.55" stop-color="#a313f4"/>
+      <stop offset="1" stop-color="#8e13ed"/>
+    </linearGradient>
+
+    <!-- GRADIENTI DEL FULMINE -->
+    <linearGradient id="boltGold" x1="0" y1="0" x2="0.9" y2="0.9">
+      <stop offset="0" stop-color="#ffdf42"/>
+      <stop offset="0.45" stop-color="#ffc02e"/>
+      <stop offset="1" stop-color="#ff9c25"/>
+    </linearGradient>
+
+    <linearGradient id="boltLight" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffd94a"/>
+      <stop offset="1" stop-color="#ffb52d"/>
+    </linearGradient>
+
+    <linearGradient id="boltPurple" x1="0" y1="0" x2="1" y2="0.8">
+      <stop offset="0" stop-color="#b61bff"/>
+      <stop offset="1" stop-color="#9412ee"/>
+    </linearGradient>
+
+    <!-- STILI PER LE ANIMAZIONI SVG
+         Versione «attesa» di logo_animato.svg: stesso ingresso, poi le lancette della bussola
+         oscillano come quando cercano il nord, finché la pagina non cambia. -->
+    <style>
+      @keyframes moveUpper {
+        0% { transform: translate(-40px, -60px) rotate(-167deg) scale(0.6); }
+        100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+      }
+
+      @keyframes moveLower {
+        0% { transform: translate(40px, 60px) rotate(-167deg) scale(0.6); }
+        100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+      }
+
+      @keyframes fadeInBolt {
+        0% { opacity: 0; transform: scale(0.5); }
+        60% { opacity: 0; transform: scale(0.5); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+
+      .upper-semi {
+        animation: moveUpper 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        transform-origin: 221px 206px;
+      }
+
+      .lower-semi {
+        animation: moveLower 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        transform-origin: 221px 229px;
+      }
+
+      .bolt-group {
+        animation: fadeInBolt 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        transform-origin: 221px 216px;
+      }
+
+      @keyframes cercaNord {
+        0%   { transform: rotate(0deg); }
+        18%  { transform: rotate(16deg); }
+        38%  { transform: rotate(-11deg); }
+        56%  { transform: rotate(6deg); }
+        72%  { transform: rotate(-3deg); }
+        84%, 100% { transform: rotate(0deg); }
+      }
+
+      .needle {
+        animation: cercaNord 2.6s ease-in-out 1.6s infinite;
+        transform-origin: 221px 216px;
+      }
+
+      /* Chi ha disattivato le animazioni nel sistema vede il logo già composto */
+      @media (prefers-reduced-motion: reduce) {
+        .upper-semi, .lower-semi, .bolt-group, .needle { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <!-- ====================================== -->
+  <!-- SEMICERCHIO SUPERIORE                  -->
+  <!-- ====================================== -->
+  <path
+    class="upper-semi"
+    d="M48 206
+       A173 173 0 0 1 394 206
+       L331 206
+       A110 110 0 0 0 111 206
+       Z"
+    fill="url(#sunGradient)"/>
+
+
+  <!-- ====================================== -->
+  <!-- SEMICERCHIO INFERIORE                  -->
+  <!-- ====================================== -->
+  <path
+    class="lower-semi"
+    d="M48 229
+       A173 173 0 0 0 394 229
+       L331 229
+       A110 110 0 0 1 111 229
+       Z"
+    fill="url(#violetGradient)"/>
+
+
+  <!-- ====================================== -->
+  <!-- FULMINE: GEOMETRIA ORIGINALE INVARIATA  -->
+  <!-- ====================================== -->
+  <!-- Gruppo esterno per l'oscillazione: l'ingresso usa già transform sul gruppo interno -->
+  <g class="needle">
+  <g class="bolt-group">
+    <path
+      d="M270 113 L248 230 L172 321 L190 215 L194 204 Z"
+      fill="url(#boltGold)"/>
+
+    <path
+      d="M270 113 L248 230 L194 204 L261 129 Z"
+      fill="url(#boltPurple)"/>
+
+    <path
+      d="M270 113 L261 129 L248 230 L234 221 Z"
+      fill="#8f12eb"/>
+
+    <path
+      d="M194 204 L248 230 L172 321 L190 215 Z"
+      fill="url(#boltLight)"/>
+
+    <path
+      d="M194 204 L216 214 L184 304 L172 321 L190 215 Z"
+      fill="#ffd13a"
+      opacity="0.72"/>
+
+    <path
+      d="M216 214 L248 230 L172 321 Z"
+      fill="#ffad27"
+      opacity="0.62"/>
+  </g>
+  </g>
+
+</svg>

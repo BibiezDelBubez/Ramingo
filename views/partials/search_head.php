@@ -9,7 +9,7 @@ $aiAnswer ??= null;
 $aiError ??= null;
 ?>
 <?php if ($ai !== null): ?>
-    <form method="post" action="<?= url('ai/chiedi') ?>" class="rg-ai-box mb-3" data-busy>
+    <form method="post" action="<?= url('ai/chiedi') ?>" class="rg-ai-box mb-3" data-busy data-busy-wait="Sto cercando tra i report e preparo la risposta…">
         <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
         <input type="hidden" name="q" value="<?= e($q) ?>">
         <button class="btn btn-sm btn-ai"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>Chiedi all'AI quale report usare</span></button>

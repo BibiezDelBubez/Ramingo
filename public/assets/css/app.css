@@ -343,6 +343,7 @@ a.rg-tag:hover, button.rg-tag:hover { background: #cdeed8; color: var(--src-manu
 .rg-toast.ok { background: #15803d; }
 .rg-toast.ko { background: #b91c1c; }
 .rg-admin-link { text-decoration: none; color: var(--rg-ink); }
+.rg-col-check { width: 2rem; }
 .rg-syn-row { display: grid; grid-template-columns: 9rem minmax(0, 1fr); align-items: center; gap: .8rem; padding: .25rem 0; margin: 0; }
 .rg-syn-label { font-weight: 600; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rg-syn-new { background: var(--rg-blue-tint); border-radius: .5rem; padding: .35rem .5rem; }
@@ -356,3 +357,27 @@ a.rg-tag:hover, button.rg-tag:hover { background: #cdeed8; color: var(--src-manu
 .rg-tech > summary { cursor: pointer; font-weight: 600; padding: .8rem 1rem; background: #fff; border: 1px solid var(--rg-line); border-radius: .75rem; }
 .rg-tech[open] > summary { margin-bottom: .5rem; }
 .rg-unused > summary { opacity: .55; }
+
+/* ---- Pagina 404: cielo stellato a tutta pagina (sfondo_404.svg) e costellazione a punto di domanda ---- */
+.rg-bleed { padding: 0; }
+.rg-lost { min-height: calc(100vh - 3.4rem); display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1rem; padding: 2rem 1rem 3rem; text-align: center; color: #fff;
+    background: #13155a url("../img/sfondo_404.svg") center top / cover no-repeat; /* dall'alto: su schermi larghi si taglia il fondo, non la luna */ }
+.rg-lost-sign { height: clamp(150px, 34vh, 320px); width: auto; }
+.rg-lost-text { max-width: 38rem; }
+.rg-lost-line { font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 600; line-height: 1.25; margin-bottom: .9rem; text-wrap: balance; }
+.rg-lost-title { font-size: .95rem; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--rg-yellow); margin-bottom: .4rem; }
+.rg-lost-text > p:not(.rg-lost-line) { color: rgba(255, 255, 255, .85); }
+.rg-lost-search { display: flex; gap: .5rem; margin: 1.2rem auto .8rem; max-width: 28rem; }
+.rg-lost-search .form-control { border: 0; border-radius: .7rem; }
+.rg-lost-home { color: #fff; text-decoration-color: var(--rg-yellow); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.rg-lost-home:hover { color: var(--rg-yellow); }
+/* Chi ha chiesto meno movimento vede solo il cielo, senza animazioni (le animazioni SVG non si fermano con il CSS) */
+@media (prefers-reduced-motion: reduce) {
+    .rg-lost { background-image: linear-gradient(#05072a, #13155a 60%, #1f2170); }
+    .rg-lost-sign { display: none; }
+}
+
+/* Attesa delle risposte AI: logo con le lancette che oscillano (logo_attesa.svg), vedi data-busy-wait in app.js */
+.rg-wait { display: flex; align-items: center; gap: .7rem; margin-top: .8rem; color: var(--rg-muted); font-size: .92rem; }
+.rg-wait img { flex: none; }

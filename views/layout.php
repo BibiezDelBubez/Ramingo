@@ -15,7 +15,8 @@
 <?php
 // Catalogo e ricerca usano tutta la larghezza (filtri a sinistra, più colonne di report sugli schermi larghi);
 // le pagine da leggere (scheda report, amministrazione) restano centrate. L'intestazione è sempre a tutta larghezza.
-$box = !empty($homeSearch) ? 'rg-wide' : 'container-xl';
+// La pagina 404 (bleed) occupa tutto lo spazio sotto l'intestazione, senza margini né piè di pagina.
+$box = !empty($bleed) ? 'rg-bleed' : (!empty($homeSearch) ? 'rg-wide' : 'container-xl');
 ?>
 <body data-base="<?= e(url()) ?>">
 <header class="rg-header">
@@ -45,16 +46,18 @@ $box = !empty($homeSearch) ? 'rg-wide' : 'container-xl';
 </header>
 <?php if (!empty($homeSearch)) echo $view->partial('partials/home_search', get_defined_vars()) ?>
 
-<main class="<?= $box ?> py-4">
+<main class="<?= $box ?><?= empty($bleed) ? ' py-4' : '' ?>">
     <?php foreach ($flashes as $f): ?>
         <div class="alert alert-<?= e($f['type']) ?>"><?= e($f['message']) ?></div>
     <?php endforeach ?>
     <?= $content ?>
 </main>
 
+<?php if (empty($bleed)): ?>
 <footer class="<?= $box ?> pb-4 small text-secondary">
     <?= $view->partial('partials/source_legend') ?>
 </footer>
+<?php endif ?>
 <script src="<?= asset('js/app.js') ?>"></script>
 <?php foreach ($scripts ?? [] as $script): ?><script src="<?= asset('js/' . $script) ?>"></script><?php endforeach ?>
 </body>

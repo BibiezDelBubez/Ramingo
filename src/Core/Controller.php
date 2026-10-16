@@ -98,6 +98,23 @@ abstract class Controller
         if ($this->request->wantsJson()) {
             $this->json(['error' => $message], $status);
         }
+        if ($status === 404) {
+            $this->render('errors/404', [
+                'title'   => 'Pagina non trovata',
+                'message' => $message,
+                'line'    => self::LOST_LINES[array_rand(self::LOST_LINES)],
+                'bleed'   => true,
+            ], 404);
+        }
         $this->render('errors/error', ['status' => $status, 'message' => $message], $status);
     }
+
+    /** Frasi della pagina 404: una a caso a ogni visita. */
+    private const LOST_LINES = [
+        'Errare è umano, ma tu perseveri.',
+        'Vagare va bene. Perdersi così, un po\' meno.',
+        'Guardi fuori dal finestrino, ma questa fermata non c\'è.',
+        'Ramingo sì, ma non fino a questo punto.',
+        'Hai seguito le stelle. Le stelle non sapevano dove andare.',
+    ];
 }

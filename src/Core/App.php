@@ -192,6 +192,7 @@ final class App
             $this->insights(),
             $this->indexer(),
             $this->repo(\Ramingo\Models\DatasetRefreshRepository::class),
+            $this->repo(\Ramingo\Models\DeletedItemRepository::class),
             $this->logger(),
             (array) $this->config->get('sync', []),
         ));

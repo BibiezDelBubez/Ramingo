@@ -12,7 +12,7 @@ final class ErrorController extends BaseController
 
     public function notFound(): void
     {
-        $this->abort(404, 'Pagina non trovata.');
+        $this->abort(404, 'Questa pagina non esiste: forse il link è vecchio o c\'è un errore nell\'indirizzo.');
     }
 
     public function serverError(\Throwable $e): void

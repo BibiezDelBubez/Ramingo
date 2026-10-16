@@ -18,6 +18,14 @@
         <h2 class="h6 mb-1"><i class="fa-solid fa-arrows-left-right"></i> Sinonimi di ricerca</h2>
         <span class="small text-secondary">Parole che la ricerca tratta come uguali: «HR» trova anche «personale».</span>
     </a>
+    <a class="rg-card rg-admin-link" href="<?= url('admin/testi') ?>">
+        <h2 class="h6 mb-1"><i class="fa-solid fa-file-csv"></i> Esporta e importa i testi</h2>
+        <span class="small text-secondary">Descrizioni, tag e categorie di tutti i report in un file per Excel, da modificare e reimportare.</span>
+    </a>
+    <a class="rg-card rg-admin-link" href="<?= url('admin/eliminati') ?>">
+        <h2 class="h6 mb-1"><i class="fa-solid fa-box-archive"></i> Eliminati da Power BI</h2>
+        <span class="small text-secondary">Report spariti da Power BI: spostare i loro testi sul sostituto, eliminarli del tutto.</span>
+    </a>
     <a class="rg-card rg-admin-link" href="<?= url('admin/ricerche') ?>">
         <h2 class="h6 mb-1"><i class="fa-solid fa-magnifying-glass"></i> Ricerche</h2>
         <span class="small text-secondary">Cosa cercano i colleghi e cosa non trovano: indica quali tag o descrizioni mancano.</span>

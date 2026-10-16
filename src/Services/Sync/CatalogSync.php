@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ramingo\Services\Sync;
 
 use Ramingo\Models\DatasetRefreshRepository;
+use Ramingo\Models\DeletedItemRepository;
 use Ramingo\Models\ReportRepository;
 use Ramingo\Models\SyncRunRepository;
 use Ramingo\Models\WorkspaceRepository;
@@ -34,6 +35,7 @@ final class CatalogSync
         private readonly InsightService $insights,
         private readonly SearchIndexer $indexer,
         private readonly DatasetRefreshRepository $refreshes,
+        private readonly DeletedItemRepository $deleted,
         private readonly Logger $log,
         private readonly array $cfg,
     ) {
@@ -66,6 +68,7 @@ final class CatalogSync
             if ($mode === 'full') {
                 $stats['deleted_workspaces'] = $this->workspaces->markDeletedNotSeenSince($runStart);
             }
+            $stats += $this->tidyDeleted();
             if ($this->cfg['fetch_report_pages'] ?? true) {
                 $stats += $this->fetchPages();
             }
@@ -134,6 +137,24 @@ final class CatalogSync
         arsort($why);
         $this->log->warning("Power BI ha rifiutato la lettura ($what)", $why);
         return [$what . '_not_accessible' => array_sum($why), $what . '_reason' => array_key_first($why)];
+    }
+
+    /**
+     * Report spariti da Power BI:
+     *  - se sono stati ripubblicati con lo stesso nome nello stesso workspace, i testi scritti a mano passano al nuovo;
+     *  - dopo sync.purge_deleted_after_days giorni (0 = mai) si cancellano del tutto.
+     */
+    private function tidyDeleted(): array
+    {
+        $moved = $this->deleted->autoReplace();
+        foreach ($moved as $m) {
+            $this->log->info("Testi scritti a mano spostati sul report ripubblicato «{$m['name']}»", $m);
+        }
+        $purged = $this->deleted->purge((int) ($this->cfg['purge_deleted_after_days'] ?? 90));
+        if (array_sum($purged)) {
+            $this->log->info('Cancellati del tutto gli elementi spariti da Power BI da tempo', $purged);
+        }
+        return ['texts_moved_to_replacement' => count($moved), 'purged_deleted' => array_sum($purged)];
     }
 
     /**

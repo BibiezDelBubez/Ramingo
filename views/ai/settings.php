@@ -16,7 +16,7 @@ $current = $personal['provider'] ?? array_key_first($providers);
             <?php if ($active): ?>
                 <p class="mb-2"><strong><?= e($active['label']) ?></strong><br>
                     <span class="small text-secondary"><?= $active['owner'] === 'personal' ? 'Chiave personale' : 'Chiave aziendale' ?></span></p>
-                <form method="post" action="<?= url('ai/prova') ?>" data-busy>
+                <form method="post" action="<?= url('ai/prova') ?>" data-busy data-busy-wait="Sto provando la chiave…">
                     <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
                     <button class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-plug"></i> <span>Prova il collegamento</span></button>
                 </form>

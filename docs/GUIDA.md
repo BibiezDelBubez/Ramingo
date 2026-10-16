@@ -94,6 +94,27 @@ Ai colleghi serve la prima: dice se i numeri sono di stamattina o di un anno fa.
   Se non lo è, la data non compare e nei Dettagli tecnici è spiegato perché.
 - Nessuna data anche per i modelli che Power BI non aggiorna mai (dati letti in tempo reale, DirectQuery).
 
+### 5.2 Report eliminati da Power BI
+
+Quando un report sparisce da Power BI, Ramingo lo toglie dal catalogo ma lo **conserva** per
+`sync.purge_deleted_after_days` giorni (90; **0 = mai cancellare**), poi lo cancella del tutto durante una
+sincronizzazione. Nessuna attività pianificata: la pulizia avviene quando parte una sincronizzazione.
+
+- **Ripubblicato con lo stesso nome nello stesso workspace** (Power BI gli ha dato un nuovo identificativo):
+  alla sincronizzazione i testi scritti a mano (categoria, descrizioni con il loro storico, tag) passano
+  da soli al nuovo report, se il nuovo non ne ha di suoi.
+- **Negli altri casi**: Amministrazione → **Eliminati da Power BI**. Ramingo propone il sostituto probabile
+  (nome simile a meno di versione e anno, stesso workspace o modello); spunti le righe giuste e premi
+  «Sposta i testi delle righe spuntate». Per ogni campo, se il sostituto ne ha già uno scritto a mano resta il suo.
+- «Elimina subito» cancella del tutto un singolo elemento (chiede conferma).
+
+### 5.3 Esporta e importa i testi (Excel)
+
+Amministrazione → **Esporta e importa i testi**: un file CSV per Excel con una riga per report o dashboard
+(categoria, tag, descrizione, a chi serve, referente, KPI, note). Lo modifichi e lo reimporti.
+Cella vuota = nessun cambiamento; «-» = cancella il campo; il report si riconosce dall'id o, senza id,
+da nome + workspace. Ogni modifica entra nello storico. Utile anche come copia di sicurezza.
+
 ---
 
 ## 6. Scrivere le descrizioni direttamente in Power BI (consigliato)

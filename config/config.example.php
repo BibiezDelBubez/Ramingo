@@ -52,6 +52,9 @@ return [
         'fetch_report_definitions'    => true,
         // Se Power BI rifiuta pagine o struttura (permessi), si riprova dopo queste ore
         'retry_denied_hours'          => 6,
+        // Report e dashboard spariti da Power BI: dopo quanti giorni cancellarli del tutto (0 = mai).
+        // Avviene durante la sincronizzazione. Fino ad allora i loro testi si possono spostare sul sostituto.
+        'purge_deleted_after_days'    => 90,
         // Data dell'ultimo aggiornamento dei DATI di ogni modello semantico (stesso requisito delle pagine).
         'fetch_data_refreshes'        => true,
         'refresh_check_minutes'       => 60,     // ogni modello si ricontrolla al massimo ogni N minuti

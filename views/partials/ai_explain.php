@@ -2,7 +2,7 @@
 /** Pulsante «Spiega con l'AI» con trasparenza su fornitore e dati inviati. @var ?array $ai  @var string $reportId */
 if ($ai === null) return;
 ?>
-<form method="post" action="<?= url('ai/report/' . $reportId . '/spiega') ?>" class="rg-ai-box" data-busy>
+<form method="post" action="<?= url('ai/report/' . $reportId . '/spiega') ?>" class="rg-ai-box" data-busy data-busy-wait="Sto leggendo il report e preparo la spiegazione…">
     <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
     <button class="btn btn-sm btn-ai"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>Spiega con l'AI</span></button>
     <span class="small text-secondary">
