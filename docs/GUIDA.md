@@ -229,8 +229,12 @@ un singolo report può poi averne una diversa. Le categorie conviene farle per a
 («Operations e logistica», «Amministrazione e finanza», «Commerciale»), non copiare i nomi dei workspace:
 altrimenti si ottiene un doppione del filtro Workspace.
 
-- Le categorie formano un **albero** (es. *Commerciale › Agenti*). Trascina una categoria su un'altra per metterla
-  dentro; trascinala sulla fascia «Primo livello» per riportarla su. Doppio clic sul nome per rinominarla.
+- Le categorie formano un **albero** (es. *Commerciale › Agenti*). Per **cambiare l'ordine** usa le frecce accanto a
+  ogni categoria, oppure trascinala sul bordo alto o basso di un'altra (compare una linea blu). Lasciata **al centro**
+  di un'altra ci finisce dentro; trascinala sulla fascia «Primo livello» per riportarla su. Doppio clic sul nome per rinominarla.
+- **Ordine nel catalogo**: in cima al riquadro scegli se il catalogo (gruppi «Per categoria» e colonna dei filtri)
+  segue l'ordine dell'elenco o l'ordine alfabetico. Con poche categorie conviene l'elenco, con le più usate in cima;
+  con molte, l'alfabetico. «Da classificare» resta sempre in fondo.
 - A destra, «Assegna i Report alle categorie», i report sono raggruppati per workspace **solo per ritrovarli**:
   i workspace non si possono modificare da Ramingo, che di Power BI ha solo permessi di lettura.
   Per ogni workspace c'è una scorciatoia, «Categoria per tutto il workspace» (vale anche per i report pubblicati in futuro);

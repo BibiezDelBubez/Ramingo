@@ -30,7 +30,19 @@ $kinds = Ramingo\Models\CatalogRepository::KINDS;
     <div class="col-lg-5">
         <section class="rg-section">
             <h2 class="h5 mb-1"><i class="fa-solid fa-shapes rg-ico-cat"></i> Categorie di Ramingo</h2>
-            <p class="small text-secondary">Trascina una categoria su un'altra per metterla dentro; doppio clic per rinominarla.</p>
+            <p class="small text-secondary">Per cambiare l'ordine usa le frecce, oppure trascina una categoria sul bordo alto o basso di un'altra (compare una linea). Lasciala al centro di un'altra per metterla dentro. Doppio clic per rinominarla.</p>
+            <form method="post" action="<?= url('admin/categorie/ordine') ?>" class="rg-cat-order mb-3">
+                <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
+                <label for="rg-cat-order">Nel catalogo mostra le categorie</label>
+                <select id="rg-cat-order" name="order" class="form-select form-select-sm" data-autosubmit>
+                    <option value="list" <?= empty($alphabetical) ? 'selected' : '' ?>>nell'ordine di questo elenco</option>
+                    <option value="alpha" <?= !empty($alphabetical) ? 'selected' : '' ?>>in ordine alfabetico</option>
+                </select>
+                <noscript><button class="btn btn-sm btn-outline-secondary">Salva</button></noscript>
+                <?php if (!empty($alphabetical)): ?>
+                    <p class="small text-secondary mb-0 mt-1">L'ordine qui sotto resta salvato, ma il catalogo ora lo ignora.</p>
+                <?php endif ?>
+            </form>
             <form method="post" action="<?= url('admin/categorie/crea') ?>" class="row g-1 mb-3">
                 <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
                 <div class="col-12 col-sm-5"><input class="form-control form-control-sm" name="name" placeholder="Nuova categoria" required maxlength="80"></div>

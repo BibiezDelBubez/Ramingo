@@ -17,6 +17,10 @@ $excluded = $collect($node);
         <i class="<?= e($node['icon'] ?: 'fa-solid fa-shapes') ?>"></i>
         <span class="rg-node-name" data-rename="<?= $id ?>" title="Doppio clic per rinominare"><?= e($node['name']) ?></span>
         <span class="rg-count"><?= (int) ($counts[$id] ?? 0) ?></span>
+        <span class="rg-order">
+            <button type="button" data-order="up" title="Sposta su" aria-label="Sposta su <?= e($node['name']) ?>"><i class="fa-solid fa-chevron-up"></i></button>
+            <button type="button" data-order="down" title="Sposta giù" aria-label="Sposta giù <?= e($node['name']) ?>"><i class="fa-solid fa-chevron-down"></i></button>
+        </span>
         <details class="rg-node-edit">
             <summary title="Modifica"><i class="fa-solid fa-ellipsis"></i></summary>
             <div class="rg-node-panel">

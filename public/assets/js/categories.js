@@ -61,24 +61,50 @@
         return !(dragged.kind === 'area' && target.dataset.dropArea === dragged.id);
     }
 
+    // Categoria sopra un'altra categoria: fascia alta = prima, fascia bassa = dopo, centro = dentro.
+    // Le fasce sono calcolate sulla sola riga, non sulle sottocategorie.
+    function where(zone, e) {
+        if (!dragged || dragged.kind !== 'area' || !zone.hasAttribute('data-drop-area')) return 'inside';
+        var row = zone.querySelector('.rg-node-row');
+        var r = row.getBoundingClientRect();
+        if (e.clientY > r.bottom) return 'inside';
+        var y = (e.clientY - r.top) / r.height;
+        return y < 0.33 ? 'before' : (y > 0.67 ? 'after' : 'inside');
+    }
+
+    function mark(zone, pos) {
+        zone.classList.remove('drop-hover', 'drop-before', 'drop-after');
+        if (pos) zone.classList.add(pos === 'inside' ? 'drop-hover' : 'drop-' + pos);
+    }
+
     document.querySelectorAll('[data-drop-area], [data-drop-root], [data-drop-none]').forEach(function (zone) {
         zone.addEventListener('dragover', function (e) {
             if (!accepts(zone)) return;
             e.preventDefault();
             e.stopPropagation();
-            zone.classList.add('drop-hover');
+            mark(zone, where(zone, e));
         });
         zone.addEventListener('dragleave', function (e) {
             e.stopPropagation();
-            zone.classList.remove('drop-hover');
+            mark(zone, null);
         });
         zone.addEventListener('drop', function (e) {
             if (!accepts(zone)) return;
             e.preventDefault();
             e.stopPropagation();
-            zone.classList.remove('drop-hover');
+            var pos = where(zone, e);
+            mark(zone, null);
             var d = dragged;
-            if (zone.hasAttribute('data-drop-root')) {
+            if (pos === 'before' || pos === 'after') {
+                // Riordino: stessa "cartella" della categoria di riferimento, prima o dopo di lei
+                var parent = zone.parentElement.closest('[data-drop-area]');
+                var ref = zone;
+                if (pos === 'after') {
+                    ref = zone.nextElementSibling;
+                    if (ref && ref.dataset.dropArea === d.id) ref = ref.nextElementSibling; // dopo di sé = resta dov'è
+                }
+                post('sposta', { id: d.id, parent_id: parent ? parent.dataset.dropArea : '', before_id: ref ? ref.dataset.dropArea : '' });
+            } else if (zone.hasAttribute('data-drop-root')) {
                 post('sposta', { id: d.id, parent_id: '' });
             } else if (zone.hasAttribute('data-drop-none')) {
                 post('assegna', { kind: d.kind, id: d.id, area_id: '' });
@@ -87,6 +113,24 @@
             } else {
                 post('assegna', { kind: d.kind, id: d.id, area_id: zone.dataset.dropArea });
             }
+        });
+    });
+
+    // ---- Frecce su/giù: riordino senza trascinare ----
+    document.querySelectorAll('[data-order]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var li = btn.closest('[data-drop-area]');
+            var parent = li.parentElement.closest('[data-drop-area]');
+            var ref;
+            if (btn.dataset.order === 'up') {
+                ref = li.previousElementSibling;
+                if (!ref) return;
+            } else {
+                var next = li.nextElementSibling;
+                if (!next) return;
+                ref = next.nextElementSibling; // prima di quella dopo la successiva (null = in fondo)
+            }
+            post('sposta', { id: li.dataset.dropArea, parent_id: parent ? parent.dataset.dropArea : '', before_id: ref ? ref.dataset.dropArea : '' });
         });
     });
 

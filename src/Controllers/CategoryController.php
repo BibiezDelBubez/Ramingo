@@ -41,6 +41,7 @@ final class CategoryController extends BaseController
             'title'      => 'Categorie',
             'unclassifiedTotal' => $unclassified,
             'tree'       => $areas->tree(),
+            'alphabetical' => $areas->alphabetical(),
             'flat'       => $areas->flat(),
             'paths'      => $areas->paths(),
             'counts'     => $areas->itemCounts(),
@@ -83,6 +84,15 @@ final class CategoryController extends BaseController
             $areas->move($this->requiredId('id'), $this->optionalId('parent_id'), $this->optionalId('before_id'));
             return 'Categoria spostata.';
         });
+    }
+
+    /** POST /admin/categorie/ordine — ordine delle categorie nel catalogo: come nell'elenco o alfabetico */
+    public function order(): void
+    {
+        $alpha = $this->request->input('order') === 'alpha';
+        $this->app->repo(AreaRepository::class)->setAlphabetical($alpha);
+        Session::flash('success', $alpha ? 'Nel catalogo le categorie sono ora in ordine alfabetico.' : 'Nel catalogo le categorie seguono ora l\'ordine di questo elenco.');
+        $this->redirect(url('admin/categorie'));
     }
 
     /** POST /admin/categorie/elimina */

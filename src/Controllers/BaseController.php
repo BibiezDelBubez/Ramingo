@@ -126,6 +126,9 @@ abstract class BaseController extends Controller
         $view = $this->viewMode();
 
         $rows     = $catalog->all($query, $sort);
+        if ($sort === 'area') {
+            $rows = $this->byCategory($rows, $areas); // prima di paginare: ogni pagina segue l'ordine delle categorie
+        }
         $total    = count($rows);
         $pageSize = max(10, (int) $cfg->get('catalog.page_size', 60));
         $pages    = max(1, (int) ceil($total / $pageSize));
@@ -195,7 +198,7 @@ abstract class BaseController extends Controller
         $raw = [['name' => null, 'icon' => null, 'cards' => $cards]];
         if ($byArea) {
             $paths = $areas->paths();
-            $order = array_flip(array_map(static fn ($a) => (int) $a['id'], $areas->flat()));
+            $order = array_flip(array_map(static fn ($a) => (int) $a['id'], $areas->catalogFlat()));
             $byKey = [];
             foreach ($cards as $c) {
                 $k = $c['area_id'] !== null ? (int) $c['area_id'] : 'none';
@@ -253,6 +256,19 @@ abstract class BaseController extends Controller
         return $out;
     }
 
+    /**
+     * Ordine «Per categoria»: categorie come scelto in amministrazione (elenco o alfabetico),
+     * «Da classificare» in fondo, dentro ogni categoria i report per nome.
+     */
+    private function byCategory(array $rows, AreaRepository $areas): array
+    {
+        $pos = array_flip(array_map(static fn ($a) => (int) $a['id'], $areas->catalogFlat()));
+        usort($rows, static fn ($a, $b) =>
+            [$a['area_id'] === null ? PHP_INT_MAX : ($pos[(int) $a['area_id']] ?? PHP_INT_MAX - 1), mb_strtolower((string) $a['name'])]
+            <=> [$b['area_id'] === null ? PHP_INT_MAX : ($pos[(int) $b['area_id']] ?? PHP_INT_MAX - 1), mb_strtolower((string) $b['name'])]);
+        return $rows;
+    }
+
     /** Albero delle categorie per i filtri: ogni categoria conta anche le sottocategorie. */
     protected function areaFacets(AreaRepository $areas, array $direct): array
     {
@@ -275,7 +291,7 @@ abstract class BaseController extends Controller
                 $walk($node['children']);
             }
         };
-        $walk($areas->tree());
+        $walk($areas->catalogTree());
         if ($none) {
             $out[] = ['value' => 'none', 'label' => 'Da classificare', 'icon' => 'fa-solid fa-inbox', 'depth' => 0, 'n' => $none];
         }

@@ -18,6 +18,20 @@ final class AreaRepository extends Repository
         'fa-solid fa-calendar-days', 'fa-solid fa-ship', 'fa-solid fa-screwdriver-wrench', 'fa-solid fa-building', 'fa-solid fa-star',
     ];
 
+    /** Impostazione: come ordinare le categorie nel catalogo ('alpha' = alfabetico, assente = come nell'elenco). */
+    public const ORDER_SETTING = 'catalog.category_order';
+
+    /** Vero se nel catalogo le categorie vanno in ordine alfabetico invece che nell'ordine scelto a mano. */
+    public function alphabetical(): bool
+    {
+        return (new SettingRepository($this->db))->get(self::ORDER_SETTING) === 'alpha';
+    }
+
+    public function setAlphabetical(bool $on): void
+    {
+        (new SettingRepository($this->db))->set(self::ORDER_SETTING, $on ? 'alpha' : null);
+    }
+
     public function all(): array
     {
         return $this->db->all('SELECT * FROM areas ORDER BY sort_order, name COLLATE NOCASE');
@@ -29,14 +43,21 @@ final class AreaRepository extends Repository
     }
 
     /**
-     * Albero: ogni nodo ha 'children' e 'depth'. Ordinato per sort_order.
+     * Albero: ogni nodo ha 'children' e 'depth'. Ordinato per sort_order, oppure per nome
+     * (a ogni livello) se $alphabetical.
      * @return array<int, array>
      */
-    public function tree(): array
+    public function tree(bool $alphabetical = false): array
     {
         $byParent = [];
         foreach ($this->all() as $a) {
             $byParent[(int) ($a['parent_id'] ?? 0)][] = $a;
+        }
+        if ($alphabetical) {
+            foreach ($byParent as &$siblings) {
+                usort($siblings, static fn ($a, $b) => strnatcasecmp($a['name'], $b['name']));
+            }
+            unset($siblings);
         }
         $build = function (int $parent, int $depth) use (&$build, $byParent): array {
             $out = [];
@@ -51,7 +72,7 @@ final class AreaRepository extends Repository
     }
 
     /** Albero "appiattito" in ordine di visualizzazione (per select e filtri). */
-    public function flat(): array
+    public function flat(bool $alphabetical = false): array
     {
         $out = [];
         $walk = function (array $nodes) use (&$walk, &$out): void {
@@ -62,8 +83,19 @@ final class AreaRepository extends Repository
                 $walk($children);
             }
         };
-        $walk($this->tree());
+        $walk($this->tree($alphabetical));
         return $out;
+    }
+
+    /** Ordine delle categorie nel catalogo, secondo l'impostazione scelta in amministrazione. */
+    public function catalogTree(): array
+    {
+        return $this->tree($this->alphabetical());
+    }
+
+    public function catalogFlat(): array
+    {
+        return $this->flat($this->alphabetical());
     }
 
     /** Percorso leggibile di ogni categoria: [id => "Commerciale › Agenti"]. */

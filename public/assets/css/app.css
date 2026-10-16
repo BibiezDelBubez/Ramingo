@@ -314,6 +314,14 @@ a.rg-tag:hover, button.rg-tag:hover { background: #cdeed8; color: var(--src-manu
 .rg-dragging-area [data-drop-root], .rg-dragging-item [data-drop-none] { border-color: var(--rg-accent); color: var(--rg-accent); }
 .drop-hover > .rg-node-row, .rg-dropzone.drop-hover { background: #eef1ff; border-color: var(--rg-accent) !important; }
 .dragging { opacity: .45; }
+/* Riordino delle categorie: linea sopra o sotto la riga = prima o dopo; riga evidenziata = dentro */
+.drop-before > .rg-node-row { box-shadow: 0 -3px 0 var(--rg-accent); }
+.drop-after > .rg-node-row { box-shadow: 0 3px 0 var(--rg-accent); }
+.rg-order { display: inline-flex; gap: .1rem; }
+.rg-order button { border: 0; background: none; color: var(--rg-muted); padding: 0 .25rem; line-height: 1; font-size: .8rem; }
+.rg-order button:hover { color: var(--rg-blue); }
+.rg-tree > .rg-node:first-child > .rg-node-row [data-order="up"],
+.rg-tree > .rg-node:last-child > .rg-node-row [data-order="down"] { visibility: hidden; }
 .rg-ws { border: 1px solid var(--rg-line); border-radius: .5rem; margin-top: .5rem; background: #fff; }
 .rg-ws-items { padding: 0 .5rem .4rem 2rem; }
 .rg-ws-items summary { font-size: .85rem; color: var(--rg-muted); cursor: pointer; }
@@ -381,3 +389,8 @@ a.rg-tag:hover, button.rg-tag:hover { background: #cdeed8; color: var(--src-manu
 /* Attesa delle risposte AI: logo con le lancette che oscillano (logo_attesa.svg), vedi data-busy-wait in app.js */
 .rg-wait { display: flex; align-items: center; gap: .7rem; margin-top: .8rem; color: var(--rg-muted); font-size: .92rem; }
 .rg-wait img { flex: none; }
+
+/* Amministrazione categorie: scelta dell'ordine nel catalogo */
+.rg-cat-order { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; padding: .6rem .8rem; background: var(--rg-blue-tint); border-radius: .5rem; font-size: .9rem; }
+.rg-cat-order .form-select { width: auto; }
+.rg-cat-order p { flex-basis: 100%; }
