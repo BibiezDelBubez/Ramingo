@@ -2,6 +2,7 @@
 /** @var array $d  @var string $access  @var array $notes  @var array $tags  @var array $owners  @var array $tiles  @var bool $canEdit */
 use Ramingo\Domain\Source;
 ?>
+<?= $view->partial('partials/hidden_notice', ['reason' => $hiddenReason ?? null, 'canEdit' => $user->isAdmin()]) ?>
 <nav class="small mb-2"><a href="<?= url() ?>">Catalogo</a> / <?= e($d['area_name'] ?? 'Da classificare') ?> / <?= e($d['workspace_name']) ?></nav>
 <div class="rg-hero d-flex flex-wrap justify-content-between gap-3">
     <div>

@@ -34,6 +34,12 @@ $box = !empty($bleed) ? 'rg-bleed' : (!empty($homeSearch) ? 'rg-wide' : 'contain
             <a href="<?= url('fonti') ?>">Fonti dei dati</a>
             <?php if ($aiNav): ?><a href="<?= url('ai/impostazioni') ?>"><i class="fa-solid fa-wand-magic-sparkles"></i> La mia AI</a><?php endif ?>
             <?php if ($user->isAdmin()): ?><a href="<?= url('admin') ?>">Amministrazione</a><?php endif ?>
+            <?php if ($user->adminVia === 'password'): ?>
+                <form method="post" action="<?= url('admin/esci') ?>" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
+                    <button class="btn btn-link btn-sm p-0" title="Torna utente normale su questo browser">Esci da Amministrazione</button>
+                </form>
+            <?php endif ?>
             <span class="text-secondary"><i class="fa-solid fa-user"></i> <?= e($user->name) ?></span>
             <?php if ($user->oid): ?>
                 <form method="post" action="<?= url('logout') ?>" class="d-inline">
@@ -56,6 +62,9 @@ $box = !empty($bleed) ? 'rg-bleed' : (!empty($homeSearch) ? 'rg-wide' : 'contain
 <?php if (empty($bleed)): ?>
 <footer class="<?= $box ?> pb-4 small text-secondary">
     <?= $view->partial('partials/source_legend') ?>
+    <?php if (!$user->isAdmin() && !$user->oid && empty($noAdminLink)): ?>
+        <p class="mt-2 mb-0"><a class="rg-admin-access" href="<?= url('admin/accesso') ?>">Accesso amministratore</a></p>
+    <?php endif ?>
 </footer>
 <?php endif ?>
 <script src="<?= asset('js/app.js') ?>"></script>

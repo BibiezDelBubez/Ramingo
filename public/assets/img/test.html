@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>SVG Logo Editor - C Interattive</title>
+    <style>
+        body { font-family: sans-serif; background: #0f1338; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { display: flex; gap: 30px; background: #1b2185; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .controls { display: flex; flex-direction: column; gap: 10px; width: 300px; }
+        label { font-size: 12px; display: flex; flex-direction: column; }
+        input[type=range] { width: 100%; margin-top: 3px; }
+        textarea { width: 100%; height: 110px; background: #0d104a; color: #00ffcc; border: 1px solid #3340c4; border-radius: 6px; padding: 6px; font-family: monospace; font-size: 11px; resize: none; }
+        svg { border: 2px solid #3340c4; border-radius: 8px; background: #1b2185; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Anteprima SVG -->
+        <div>
+            <svg id="previewSvg" width="350" height="300" viewBox="0 0 400 300">
+                <rect width="400" height="300" fill="#1b2185" />
+                <g id="groupC">
+                    <path id="pathYellow" fill="none" stroke="#fcee0a" stroke-linecap="butt" />
+                    <path id="pathPurple" fill="none" stroke="#9152b1" stroke-linecap="butt" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Controlli -->
+        <div class="controls">
+            <h3>Parametri SVG</h3>
+            
+            <label>Rotazione Gruppo: <span id="valRot">0</span>°
+                <input type="range" id="rotRange" min="-180" max="180" value="0" oninput="updateSVG()">
+            </label>
+
+            <label>Distanza (X) Viola: <span id="valX">40</span>px
+                <input type="range" id="xRange" min="-100" max="150" value="40" oninput="updateSVG()">
+            </label>
+
+            <label>Distanza (Y) Viola: <span id="valY">40</span>px
+                <input type="range" id="yRange" min="-100" max="150" value="40" oninput="updateSVG()">
+            </label>
+
+            <label>Spessore Tratto: <span id="valStroke">45</span>px
+                <input type="range" id="strokeRange" min="10" max="80" value="45" oninput="updateSVG()">
+            </label>
+
+            <label>Ampiezza Arco (Angolo): <span id="valSweep">180</span>°
+                <input type="range" id="sweepRange" min="90" max="270" value="180" oninput="updateSVG()">
+            </label>
+
+            <label>Codice SVG Generato:
+                <textarea id="codeOutput" readonly></textarea>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        function updateSVG() {
+            const rot = parseInt(document.getElementById('rotRange').value);
+            const dx = parseInt(document.getElementById('xRange').value);
+            const dy = parseInt(document.getElementById('yRange').value);
+            const stroke = parseInt(document.getElementById('strokeRange').value);
+            const sweep = parseInt(document.getElementById('sweepRange').value);
+
+            document.getElementById('valRot').innerText = rot;
+            document.getElementById('valX').innerText = dx;
+            document.getElementById('valY').innerText = dy;
+            document.getElementById('valStroke').innerText = stroke;
+            document.getElementById('valSweep').innerText = sweep;
+
+            // Calcolo geometrico del punto finale dell'arco in base all'angolo (sweep)
+            const r = 60;
+            const rad = (sweep * Math.PI) / 180;
+            // Coordinate relative finali dell'arco
+            const x2 = Math.round(150 + r * (1 - Math.cos(rad)));
+            const y2 = Math.round(150 - r * Math.sin(rad));
+            const largeArc = sweep > 180 ? 1 : 0;
+
+            const pathYellowData = `M 150,90 A ${r},${r} 0 ${largeArc},1 ${x2},${y2}`;
+            const pathPurpleData = `M ${150+dx},${90+dy} A ${r},${r} 0 ${largeArc},1 ${x2+dx},${y2+dy}`;
+
+            document.getElementById('pathYellow').setAttribute('d', pathYellowData);
+            document.getElementById('pathYellow').setAttribute('stroke-width', stroke);
+            
+            document.getElementById('pathPurple').setAttribute('d', pathPurpleData);
+            document.getElementById('pathPurple').setAttribute('stroke-width', stroke);
+
+            document.getElementById('groupC').setAttribute('transform', `rotate(${rot}, 200, 150)`);
+
+            // Generazione codice
+            const svgCode = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <!-- Sfondo Blu Scuro -->
+  <rect width="400" height="300" fill="#1b2185" />
+  
+  <g transform="rotate(${rot}, 200, 150)">
+    <!-- C Gialla -->
+    <path d="${pathYellowData}" fill="none" stroke="#fcee0a" stroke-width="${stroke}" stroke-linecap="butt" />
+    
+    <!-- C Viola -->
+    <path d="${pathPurpleData}" fill="none" stroke="#9152b1" stroke-width="${stroke}" stroke-linecap="butt" />
+  </g>
+</svg>`;
+
+            document.getElementById('codeOutput').value = svgCode;
+        }
+
+        updateSVG();
+    </script>
+</body>
+</html>

@@ -227,7 +227,7 @@ h1, h2, h3, .h1, .h2, .h3, .h4, .h5, .h6 { font-weight: 600; letter-spacing: -.0
 .rg-fresh i { margin-right: 0; }
 .fresh-fresh { color: var(--rg-muted); }
 .fresh-stale { color: #9a5b00; }
-.fresh-failed { color: #b91c1c; }
+.rg-fresh-warn { display: inline-flex; margin-left: .4rem; color: #b91c1c; cursor: help; } /* aggiornamento non riuscito: il motivo è nel title */
 .fresh-unknown { color: var(--rg-muted); font-style: italic; }
 .rg-hero .rg-fresh { font-size: .9rem; }
 .rg-card-foot { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; border-top: 1px solid var(--rg-line); padding-top: .65rem; margin-top: .2rem; }
@@ -394,3 +394,40 @@ a.rg-tag:hover, button.rg-tag:hover { background: #cdeed8; color: var(--src-manu
 .rg-cat-order { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; padding: .6rem .8rem; background: var(--rg-blue-tint); border-radius: .5rem; font-size: .9rem; }
 .rg-cat-order .form-select { width: auto; }
 .rg-cat-order p { flex-basis: 100%; }
+
+/* Nascosti dal catalogo: interruttore discreto in fondo ai filtri, etichetta sulle schede, avviso nella scheda */
+.rg-hidden-toggle { display: block; margin: 1rem 0 0; padding: 0; border: 0; background: none; color: var(--rg-muted); font-size: .8rem; text-align: left; }
+.rg-hidden-toggle:hover { color: var(--rg-blue); text-decoration: underline; }
+.rg-hidden-badge { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; color: var(--rg-muted); background: #eceef4; border-radius: 999px; padding: .05rem .5rem; margin-left: .4rem; white-space: nowrap; }
+.rg-hidden-notice { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; padding: .55rem .9rem; margin-bottom: 1rem; border-radius: .6rem; background: #eceef4; color: var(--rg-ink); font-size: .9rem; }
+.rg-hidden-notice > a { margin-left: auto; }
+.rg-vis-ws { border: 1px solid var(--rg-line); border-radius: .6rem; background: #fff; margin-bottom: .5rem; }
+.rg-vis-ws > summary { display: flex; align-items: center; gap: .6rem; padding: .5rem .8rem; cursor: pointer; list-style: none; }
+.rg-vis-ws > summary::-webkit-details-marker { display: none; }
+.rg-vis-ws.is-hidden > summary .rg-vis-name { color: var(--rg-muted); text-decoration: line-through; }
+.rg-vis-name { font-weight: 600; flex-grow: 1; }
+.rg-vis-items { list-style: none; margin: 0; padding: 0 .8rem .5rem 2.2rem; }
+.rg-vis-items li { display: flex; align-items: center; gap: .6rem; padding: .25rem 0; border-top: 1px solid var(--rg-line); }
+.rg-vis-items li .rg-vis-item { flex-grow: 1; }
+.rg-vis-items li.is-hidden .rg-vis-item { color: var(--rg-muted); }
+.rg-vis-why { font-size: .78rem; color: var(--rg-muted); }
+.rg-vis-btn { border: 1px solid var(--rg-line); background: #fff; border-radius: .4rem; padding: .1rem .55rem; font-size: .8rem; color: var(--rg-ink); white-space: nowrap; }
+.rg-prefixes { max-width: 18rem; font-family: var(--bs-font-monospace); }
+.rg-vis-btn:hover { border-color: var(--rg-blue); color: var(--rg-blue); }
+
+/* La mia AI: guida (stesso testo del file scaricabile /ai/guida) */
+.rg-guide > summary { list-style: none; cursor: pointer; }
+.rg-guide > summary::-webkit-details-marker { display: none; }
+.rg-guide-body { margin-top: .8rem; max-width: 52rem; }
+.rg-guide-h { font-size: 1rem; font-weight: 600; color: var(--rg-blue); margin: 1.1rem 0 .4rem; }
+.rg-guide-body > .rg-guide-h:first-child { margin-top: 0; }
+.rg-guide-body li { margin-bottom: .35rem; }
+
+/* Glossario: righe che si salvano da sole */
+.rg-glossary .rg-gl-term { width: 20%; } .rg-glossary .rg-gl-pbi { width: 24%; }
+.rg-glossary .rg-gl-label { width: 20%; } .rg-glossary .rg-gl-desc { width: 33%; } .rg-glossary .rg-gl-state { width: 2.2rem; }
+.rg-gl-text { resize: vertical; min-height: 2.4rem; overflow: hidden; }
+.rg-gl-use { border: 0; background: none; padding: 0; margin-left: .3rem; color: var(--rg-blue); font-size: .8rem; text-decoration: underline; }
+.rg-gl-status { text-align: center; color: var(--rg-muted); }
+.rg-gl-status.is-ok, .rg-gl-status .fa-check { color: #198754; }
+.rg-gl-status.is-error { color: #b91c1c; cursor: help; }

@@ -23,6 +23,7 @@ final class DashboardController extends BaseController
         $this->render('dashboard/show', [
             'title'       => $d['name'],
             'd'           => $d,
+            'hiddenReason' => $this->app->repo(\Ramingo\Models\CatalogRepository::class)->hiddenReasonFor('dashboard', $id),
             'access'      => $this->app->access()->states($this->user, [['entity_type' => 'dashboard'] + $d])['dashboard:' . $id],
             'notes'       => $notes,
             'description' => CardPresenter::bestDescription(null, $notes),

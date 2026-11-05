@@ -23,6 +23,8 @@ final class AdminController extends BaseController
         $ai = $this->app->aiConnections();
         $this->render('admin/index', [
             'title'          => 'Amministrazione',
+            'defaultPassword' => $this->app->config()->get('auth.mode', 'none') !== 'entra'
+                && (new \Ramingo\Services\Auth\AdminPassword($this->app->repo(\Ramingo\Models\SettingRepository::class), $this->app->config()))->isDefault(),
             'runs'           => $this->app->repo(SyncRunRepository::class)->recent(10),
             'fts'            => $this->app->repo(SearchRepository::class)->fts(),
             'pbiMode'        => $this->app->powerBiSettings()->mode(),

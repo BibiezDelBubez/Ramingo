@@ -79,6 +79,10 @@ di Windows (comandi nel [README](../README.md)).
 
 ### 5.1 «Dati aggiornati» e «modificato»: due date diverse
 
+> **Oggi la data dei dati è spenta** (`catalog.show_data_dates = false` in `config/config.php`): Ramingo la legge
+> solo durante la sincronizzazione, e senza una sincronizzazione automatica sarebbe vecchia. Spenta, spariscono
+> la data sulle schede, il filtro «Dati aggiornati» e l'ordine «Dati più recenti». Per riaccenderla: `true`.
+
 | Data | Cosa significa | Dove si vede |
 |---|---|---|
 | **Dati aggiornati al…** | ultimo aggiornamento riuscito dei **dati** (refresh del modello semantico). In Power BI è la colonna «Aggiornato» dell'elenco del workspace | schede del catalogo, pagina del report, ordinamento «Dati più recenti» |
@@ -245,6 +249,21 @@ altrimenti si ottiene un doppione del filtro Workspace.
 
 ---
 
+### 8.1 Nascosti dal catalogo
+
+Alcuni report servono a chi lavora sui dati ma non ai colleghi (modelli tecnici, prove, appoggi).
+In **Amministrazione → Nascosti dal catalogo** si tolgono dal catalogo, dalla ricerca, dai suggerimenti e dai conteggi:
+
+- **un intero workspace**: nasconde tutto quello che contiene, anche i report pubblicati in futuro;
+- **un singolo report o dashboard**;
+- **per nome**, con una regola: nascondi i report il cui nome inizia con un prefisso (es. `_` o `[TEC]`).
+  Conviene concordare un prefisso in Power BI per i report tecnici: così non c'è niente da fare a mano.
+
+Il link diretto alla scheda funziona comunque e mostra un avviso «non compare nel catalogo».
+In fondo alla colonna dei filtri c'è **«Mostra anche i nascosti»**: il browser lo ricorda, i nascosti compaiono con l'etichetta «Nascosto».
+Non è una protezione: chiunque può accenderlo. I dati restano protetti dai permessi di Power BI;
+se servisse nascondere davvero a qualcuno anche i nomi, la strada è l'accesso con l'account aziendale (`auth.mode = 'entra'`).
+
 ## 9. Cosa vedono i colleghi
 
 La scheda di ogni report ha due livelli:
@@ -281,7 +300,12 @@ a sinistra la colonna dei filtri, al centro i report. Gli esempi sotto la ricerc
   la larghezza ai report; si riapre con «Filtri (n)» sopra l'elenco, e la scelta viene ricordata.
   Le sezioni chiuse indicano quante voci hai scelto, es. «Workspace (1)».
 - **Schede o elenco**: i due pulsanti in alto a destra; la scelta viene ricordata.
-- **Ordine**: per categoria (predefinito), per nome, dati più recenti; con una ricerca anche «più pertinenti».
+- **Ordine**: per categoria (predefinito), per nome, dati più recenti; con una ricerca anche
+  «Prima chi ha la parola nel nome», che è l'ordine predefinito dei risultati. Funziona a gradini: per ogni parola cercata
+  conta il punto migliore in cui compare, **nome** > categoria, tag e KPI > descrizioni e pagine > nomi tecnici dei dati;
+  chi contiene più parole della ricerca sta sopra chi ne contiene meno. Dentro lo stesso gradino decide il calcolo
+  automatico di SQLite (BM25). I sinonimi contano come la parola: con il gruppo «vettori, subvettori, terzisti…»
+  cercare «subvettori» trova anche i report che parlano di vettori, ma quelli con «subvettori» nel nome restano sopra.
 - **Report con dati fermi da più di 3 mesi** finiscono in fondo a ogni gruppo, sotto una riga tratteggiata
   (soglia: `catalog.old_after_days`).
 - **Pagine**: oltre `catalog.page_size` report (oggi 48) l'elenco va su più pagine, con un avviso che dice
@@ -353,6 +377,24 @@ produce è marcato «Interpretazione automatica».
 - Ogni tentativo, riuscito o no, è nel registro in Amministrazione.
 
 ---
+
+## 10.1 Chi può entrare in Amministrazione
+
+Senza login aziendale (`auth.mode = 'none'`, come oggi):
+
+- **dal PC su cui gira Ramingo** si è amministratori in automatico (indirizzo `localhost`, oppure lo stesso indirizzo
+  del server); valgono anche gli IP elencati in `auth.admin_ips`;
+- **da un altro PC** si va su **Accesso amministratore** (link in fondo a ogni pagina, o direttamente
+  `…/ramingo/admin`) e si inserisce la **password di amministrazione**. Vale finché non si chiude il browser;
+  «Esci da Amministrazione» in alto torna utente normale.
+
+La password iniziale è **admin** (`auth.admin_password` in `config\config.php`). **Cambiala** da
+Amministrazione → Accesso amministratore: quella del pannello è salvata cifrata e vince su quella del file.
+Con `auth.admin_password = ''` e nessuna password dal pannello, Amministrazione si apre solo dal PC di Ramingo.
+Le password sbagliate sono rallentate e annotate nel log con l'IP di chi ha provato.
+
+È una protezione leggera, adatta alla rete aziendale. Con il login aziendale (`auth.mode = 'entra'`) la password
+non si usa: sono amministratori le email in `auth.admin_emails`.
 
 ## 11. Segreti e sicurezza, in breve
 

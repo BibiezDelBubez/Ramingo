@@ -15,13 +15,23 @@ final class SearchService
 {
     private const FIELD_LABELS = ['title' => 'titolo', 'keywords' => 'categoria, tag e KPI', 'body' => 'descrizioni e pagine', 'tech' => 'nomi tecnici dei dati'];
 
+    /**
+     * Ordine dei risultati, a gradini (per ogni parola cercata conta il punto migliore in cui compare):
+     *   nel nome 30  >  categoria, tag, KPI 10  >  descrizioni e pagine 3  >  solo nomi tecnici 0.
+     * I gradini sono scelti perché un gradino più alto vinca sempre sulla somma di quelli sotto
+     * (30 > 10 + 3). Il punteggio BM25 di SQLite (tra 0 e circa 1,3 per parola) serve solo a
+     * ordinare dentro lo stesso gradino: da solo non distingue il nome dal resto, perché FTS5
+     * moltiplica le occorrenze per il peso della colonna ma poi le satura.
+     */
+    private const FIELD_RANK = ['titolo' => 30, 'categoria, tag e KPI' => 10, 'descrizioni e pagine' => 3, 'nomi tecnici dei dati' => 0];
+
     public function __construct(private readonly QueryInterpreter $interpreter, private readonly SearchRepository $index)
     {
     }
 
     /**
      * @return array{concepts: array, mode: string, hits: array<string, array{score:float, why:array}>, corrected: array<string,string>}
-     *         hits indicizzati per "tipo:id", già ordinati per pertinenza
+     *         hits indicizzati per "tipo:id", già ordinati (vedi FIELD_RANK)
      */
     public function search(string $query, int $limit = 100, bool $correct = true): array
     {
@@ -36,14 +46,23 @@ final class SearchService
         }
 
         $hits = [];
+        $wanted = Text::normalize($query);
         foreach ($rows as $row) {
             $why = $this->explain($row, $concepts);
             // «debole»: trovato SOLO tra i nomi tecnici del modello dati (es. una colonna «fatturazione»)
             $weak = $why && !array_filter($why, static fn ($w) => $w['fields'] !== ['nomi tecnici dei dati']);
+            $rank = 0;
+            foreach ($why as $w) {
+                $rank += max(array_map(static fn ($f) => self::FIELD_RANK[$f] ?? 0, $w['fields']));
+            }
             $hits[$row['entity_key']] = [
-                'score'   => (float) $row['score'] + 100 * count($why) - ($weak ? 1000 : 0), // più concetti = più in alto; i deboli in fondo
-                'why'     => $why,
-                'weak'    => $weak,
+                'score' => 100 * count($why)                            // più parole trovate = più in alto
+                         + $rank                                        // poi dove compaiono (nome prima di tutto)
+                         + ($wanted !== '' && $row['title'] === $wanted ? 5 : 0) // nome identico alla ricerca
+                         + (float) $row['score']                        // a parità, il calcolo BM25
+                         - ($weak ? 1000 : 0),                          // i deboli in fondo
+                'why'   => $why,
+                'weak'  => $weak,
             ];
         }
         uasort($hits, static fn ($a, $b) => $b['score'] <=> $a['score']);

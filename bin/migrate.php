@@ -18,6 +18,10 @@ $addColumns = [
     ['reports', 'definition_error', 'TEXT'],
     ['reports', 'replaced_by', 'TEXT'],       // eliminato da Power BI: i suoi testi sono stati spostati su questo report
     ['dashboards', 'replaced_by', 'TEXT'],
+    // nascosti dal catalogo (scelta in Amministrazione → Nascosti): non compaiono né in elenco né nella ricerca
+    ['workspaces', 'hidden', 'INTEGER NOT NULL DEFAULT 0'],
+    ['reports', 'hidden', 'INTEGER NOT NULL DEFAULT 0'],
+    ['dashboards', 'hidden', 'INTEGER NOT NULL DEFAULT 0'],
 ];
 $tableExists = static fn (string $t) => (bool) $db->value("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", [$t]);
 foreach ($addColumns as [$table, $column, $definition]) {

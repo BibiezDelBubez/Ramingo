@@ -7,7 +7,7 @@ $desc  = $c['description'] !== null && !$c['description']->isEmpty() ? mb_strimw
 <li class="rg-row kind-<?= e($c['kind']) ?>">
     <i class="<?= e($icons[$c['kind']]) ?> rg-row-ico" title="<?= e($kinds[$c['kind']]) ?>" aria-hidden="true"></i>
     <div class="rg-row-main">
-        <a class="rg-row-title" href="<?= e($c['detail_url']) ?>"><?= e($c['name']) ?></a>
+        <a class="rg-row-title" href="<?= e($c['detail_url']) ?>"><?= e($c['name']) ?></a> <?php if (!empty($c['hidden_reason'])): ?><span class="rg-hidden-badge" title="Non compare nel catalogo per gli altri"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Nascosto</span><?php endif ?>
         <?php if ($desc !== ''): ?><span class="rg-row-desc"><?= e($desc) ?></span><?php endif ?>
         <?php if ($c['tags']): ?><span class="rg-row-tags"><?= $view->partial('partials/tags', ['tags' => $c['tags']]) ?></span><?php endif ?>
     </div>

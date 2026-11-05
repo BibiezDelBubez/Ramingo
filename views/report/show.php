@@ -20,6 +20,7 @@ $measureCount = array_sum(array_map(static fn ($t) => count($t['measures']), $sc
 $humanTitles = static fn (array $vs) => array_values(array_unique(array_filter(array_column($vs, 'title'))));
 $fieldName = static fn (array $f) => $f['entity'] !== '' ? $f['entity'] . '.' . $f['property'] : $f['property'];
 ?>
+<?= $view->partial('partials/hidden_notice', ['reason' => $hiddenReason ?? null, 'canEdit' => $user->isAdmin()]) ?>
 <nav class="small mb-2"><a href="<?= url() ?>">Catalogo</a> / <?= e($areaPath ?? 'Da classificare') ?></nav>
 
 <div class="rg-hero d-flex flex-wrap justify-content-between gap-3">
@@ -28,7 +29,7 @@ $fieldName = static fn (array $f) => $f['entity'] !== '' ? $f['entity'] . '.' . 
         <div class="text-secondary"><?= $r['report_type'] === 'PaginatedReport' ? 'Report impaginato' : 'Report' ?>
             <?php if ($r['endorsement']): ?> · <strong><?= $r['endorsement'] === 'Certified' ? 'Certificato' : 'Promosso' ?></strong><?= $r['certified_by'] ? ' da ' . e($r['certified_by']) : '' ?><?php endif ?>
         </div>
-        <div class="mt-1"><?= $view->partial('partials/freshness', ['f' => $freshness, 'showUnknown' => true]) ?></div>
+        <?php if ($freshness): ?><div class="mt-1"><?= $view->partial('partials/freshness', ['f' => $freshness, 'showUnknown' => true]) ?></div><?php endif ?>
         <div class="mt-2"><?= $view->partial('partials/tags', ['tags' => $tags]) ?></div>
     </div>
     <div class="text-end">
@@ -108,10 +109,14 @@ $fieldName = static fn (array $f) => $f['entity'] !== '' ? $f['entity'] . '.' . 
             <h2 class="h5">In breve</h2>
             <dl class="rg-dl">
                 <dt>Categoria</dt><dd><?= e($areaPath ?? 'Da classificare') ?></dd>
+                <dt>Workspace</dt><dd><a href="<?= url('', ['ws' => [$r['workspace_id']]]) ?>" title="Tutti i report di questo workspace"><?= e($r['workspace_name']) ?></a>
+                    <span class="small text-secondary">· cartella di Power BI</span></dd>
                 <?php if ($people): ?><dt>Curato da</dt><dd><?= e(implode(', ', $people)) ?></dd><?php endif ?>
+                <?php if ($freshness): ?>
                 <dt>Dati aggiornati</dt><dd><?= $freshness['label'] !== null && $r['data_refreshed_at']
                     ? fmt_date($r['data_refreshed_at'], true) . ($freshness['state'] === 'failed' ? ' (l\'aggiornamento successivo non è riuscito)' : '')
                     : 'non disponibile' ?></dd>
+                <?php endif ?>
             </dl>
         </section>
         <?php if ($siblings): ?>
@@ -132,7 +137,7 @@ $fieldName = static fn (array $f) => $f['entity'] !== '' ? $f['entity'] . '.' . 
             <section class="rg-section">
                 <h2 class="h6">Proposte automatiche <?= $view->partial('partials/source_badge', ['source' => Source::Auto]) ?></h2>
                 <p class="small text-secondary">Testi dedotti da Ramingo o da un'AI. I colleghi non li vedono finché qualcuno non li approva.</p>
-                <?= $view->partial('partials/descriptions', ['notes' => $notes, 'mode' => 'auto', 'canApprove' => $canEdit, 'entityType' => 'report', 'entityId' => $r['id']]) ?>
+                <?= $view->partial('partials/descriptions', ['notes' => $notes, 'mode' => 'auto', 'canApprove' => $canEdit, 'entityType' => 'report', 'entityId' => $r['id'], 'csrf' => $csrf]) ?>
                 <?= $view->partial('partials/ai_explain', ['ai' => $ai, 'reportId' => $r['id'], 'csrf' => $csrf]) ?>
             </section>
 
@@ -208,9 +213,9 @@ $fieldName = static fn (array $f) => $f['entity'] !== '' ? $f['entity'] . '.' . 
                     'Proprietari'            => $ownerList,
                     'Creato'                 => trim(fmt_date($r['created_at']) . ' · ' . ($r['created_by'] ?? ''), ' ·'),
                     'Ultima modifica'        => trim(fmt_date($r['modified_at'], true) . ' · ' . ($r['modified_by'] ?? ''), ' ·'),
-                    'Aggiornamento dati'     => $freshness['reason'] ?? trim(fmt_date($r['data_refreshed_at'] ?? null, true)
+                    'Aggiornamento dati'     => !$freshness ? null : $freshness['reason'] ?? trim(fmt_date($r['data_refreshed_at'] ?? null, true)
                         . (($r['data_last_status'] ?? '') !== 'Completed' && ($r['data_last_status'] ?? null) ? ' · ultimo tentativo: ' . $r['data_last_status'] . ' il ' . fmt_date($r['data_last_attempt_at'] ?? null, true) : '')),
-                    'Controllato il'         => ($r['data_checked_at'] ?? null) ? fmt_date($r['data_checked_at'], true) : null,
+                    'Controllato il'         => $freshness && ($r['data_checked_at'] ?? null) ? fmt_date($r['data_checked_at'], true) : null,
                     'Modello semantico'      => $r['dataset_name'] ? $r['dataset_name'] . ' (' . ($r['dataset_storage_mode'] ?? '—') . ')' : null,
                     'Configurato da'         => $r['dataset_configured_by'],
                     'Etichetta riservatezza' => $r['sensitivity_label_id'] ? 'Presente' : null,

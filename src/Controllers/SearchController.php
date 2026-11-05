@@ -5,7 +5,6 @@ namespace Ramingo\Controllers;
 
 use Ramingo\Models\AreaRepository;
 use Ramingo\Models\CatalogRepository;
-use Ramingo\Models\TagRepository;
 use Ramingo\Services\Search\Text;
 
 final class SearchController extends BaseController
@@ -53,14 +52,15 @@ final class SearchController extends BaseController
         };
         $out = [];
         $areas = $this->app->repo(AreaRepository::class);
-        foreach ($this->areaFacets($areas, $this->app->repo(CatalogRepository::class)->facets([])['areas']) as $a) {
+        foreach ($this->areaFacets($areas, $this->app->repo(CatalogRepository::class)->facets(['show_hidden' => $this->showHidden()])['areas']) as $a) {
             if ($a['value'] !== 'none' && $a['n'] > 0 && $matches($a['label'])) {
                 $out[] = ['type' => 'Categoria', 'label' => $a['label'], 'n' => $a['n'], 'url' => url('', ['area' => [$a['value']]])];
             }
         }
-        foreach ($this->app->repo(TagRepository::class)->inUse() as $t) {
-            if ($matches($t['tag'])) {
-                $out[] = ['type' => 'Tag', 'label' => '#' . $t['tag'], 'n' => (int) $t['n'], 'url' => url('', ['tag' => [$t['tag']]])];
+        // i tag dai conteggi del catalogo: un tag usato solo da report nascosti non va suggerito
+        foreach ($this->app->repo(CatalogRepository::class)->facets(['show_hidden' => $this->showHidden()])['tags'] as $t) {
+            if ($matches($t['value'])) {
+                $out[] = ['type' => 'Tag', 'label' => '#' . $t['value'], 'n' => (int) $t['n'], 'url' => url('', ['tag' => [$t['value']]])];
             }
         }
         usort($out, static fn ($a, $b) => $b['n'] <=> $a['n']);

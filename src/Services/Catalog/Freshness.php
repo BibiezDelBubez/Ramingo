@@ -34,14 +34,15 @@ final class Freshness
                 default => 'Nessun aggiornamento riuscito tra gli ultimi registrati da Power BI.',
             };
             return ['state' => $status === 'Failed' ? self::FAILED : self::UNKNOWN,
-                    'label' => $status === 'Failed' ? 'Aggiornamento dei dati non riuscito' : null,
-                    'title' => $reason, 'reason' => $reason];
+                    'label' => $status === 'Failed' ? 'Nessun aggiornamento riuscito' : null,
+                    'title' => $status === 'Failed' ? 'Gli ultimi aggiornamenti dei dati non sono riusciti: controlla la cronologia aggiornamenti del modello in Power BI.' : $reason,
+                    'reason' => $reason];
         }
 
         $label = 'Dati aggiornati ' . self::when($success);
         if ($status === 'Failed') {
             return ['state' => self::FAILED, 'label' => $label,
-                    'title' => 'L\'ultimo aggiornamento dei dati (' . fmt_date($row['data_last_attempt_at'] ?? null, true) . ') non è riuscito: i dati sono quelli del ' . fmt_date($success, true) . '.',
+                    'title' => 'L\'ultimo aggiornamento dei dati (' . fmt_date($row['data_last_attempt_at'] ?? null, true) . ') non è riuscito: i dati sono ancora quelli del ' . fmt_date($success, true) . '. Il motivo è nella cronologia aggiornamenti del modello in Power BI.',
                     'reason' => null];
         }
         $age = (time() - strtotime($success)) / 86400;

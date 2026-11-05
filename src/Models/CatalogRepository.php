@@ -12,6 +12,10 @@ use Ramingo\Core\Database;
  * Restano fuori i contenuti creati da Microsoft e non dall'azienda:
  *  - il workspace «Admin monitoring» (tipo AdminWorkspace), creato da Fabric per gli amministratori;
  *  - i report «Usage Metrics», generati da Power BI quando qualcuno apre le metriche di utilizzo.
+ *
+ * Restano fuori anche i NASCOSTI (Amministrazione → Nascosti), salvo il filtro show_hidden:
+ * report o dashboard nascosti uno per uno, interi workspace nascosti, nomi che iniziano con
+ * un prefisso scelto (es. «_»). Il link diretto alla scheda funziona comunque.
  */
 final class CatalogRepository extends Repository
 {
@@ -23,7 +27,8 @@ final class CatalogRepository extends Repository
                    ea.area_id, a.name AS area_name, a.icon AS area_icon, a.sort_order AS area_sort,
                    r.endorsement, r.modified_at, r.modified_by, r.web_url, r.app_url, r.dataset_id,
                    dr.last_success_at AS data_refreshed_at, dr.last_attempt_status AS data_last_status,
-                   dr.last_attempt_at AS data_last_attempt_at, dr.has_history AS data_has_history, dr.accessible AS data_accessible
+                   dr.last_attempt_at AS data_last_attempt_at, dr.has_history AS data_has_history, dr.accessible AS data_accessible,
+                   COALESCE(r.hidden, 0) AS item_hidden, COALESCE(w.hidden, 0) AS ws_hidden
               FROM reports r
               JOIN workspaces w ON w.id = r.workspace_id AND w.is_deleted = 0 AND COALESCE(w.type, '') <> 'AdminWorkspace'
          LEFT JOIN item_area ea ON ea.entity_type = 'report' AND ea.entity_id = r.id
@@ -36,7 +41,8 @@ final class CatalogRepository extends Repository
                    d.id, d.name, NULL, d.workspace_id, w.name,
                    ea.area_id, a.name, a.icon, a.sort_order,
                    NULL, NULL, NULL, d.web_url, d.app_url, NULL,
-                   NULL, NULL, NULL, NULL, NULL
+                   NULL, NULL, NULL, NULL, NULL,
+                   COALESCE(d.hidden, 0), COALESCE(w.hidden, 0)
               FROM dashboards d
               JOIN workspaces w ON w.id = d.workspace_id AND w.is_deleted = 0 AND COALESCE(w.type, '') <> 'AdminWorkspace'
          LEFT JOIN item_area ea ON ea.entity_type = 'dashboard' AND ea.entity_id = d.id
@@ -60,6 +66,7 @@ final class CatalogRepository extends Repository
      *  - tags string[]    tag scritti a mano: l'elemento deve averli TUTTI (in E)
      *  - fresh string     week | month | old  (data dell'ultimo aggiornamento dei dati)
      *  - keys string[]    solo questi elementi («tipo:id», es. risultati di una ricerca)
+     *  - show_hidden bool anche i nascosti (vista «mostra anche i nascosti»)
      */
     public const FRESH_DAYS = ['week' => 7, 'month' => 30, 'old' => 90];
 
@@ -73,7 +80,7 @@ final class CatalogRepository extends Repository
             usort($rows, static fn ($a, $b) => ($pos[$a['entity_type'] . ':' . $a['id']] ?? PHP_INT_MAX)
                 <=> ($pos[$b['entity_type'] . ':' . $b['id']] ?? PHP_INT_MAX));
         }
-        return $rows;
+        return $this->withHiddenReason($rows);
     }
 
     /** @return array{items: array, total: int} */
@@ -93,15 +100,17 @@ final class CatalogRepository extends Repository
     }
 
     /** Elementi per id (mantiene l'ordine dato, es. ranking della ricerca). */
-    public function byKeys(array $keys): array
+    public function byKeys(array $keys, bool $showHidden = false): array
     {
         if (!$keys) {
             return [];
         }
         $ids = array_map(static fn ($k) => explode(':', $k, 2)[1], $keys);
-        $rows = $this->db->all(self::BASE . ' WHERE id IN (' . Database::placeholders($ids) . ')', $ids);
+        [$hidden, $hp] = $this->hiddenClause();
+        $rows = $this->db->all(self::BASE . ' WHERE id IN (' . Database::placeholders($ids) . ')' . ($showHidden ? '' : " AND $hidden"),
+            $showHidden ? $ids : [...$ids, ...$hp]);
         $byKey = [];
-        foreach ($rows as $r) {
+        foreach ($this->withHiddenReason($rows) as $r) {
             $byKey[$r['entity_type'] . ':' . $r['id']] = $r;
         }
         return array_values(array_filter(array_map(static fn ($k) => $byKey[$k] ?? null, $keys)));
@@ -125,7 +134,117 @@ final class CatalogRepository extends Repository
     public function counts(): array
     {
         return array_map('intval', array_column(
-            $this->db->all('SELECT kind, COUNT(*) AS n FROM (' . self::BASE . ') GROUP BY kind'), 'n', 'kind'));
+            $this->db->all('SELECT kind, COUNT(*) AS n FROM (' . self::BASE . $this->where([])[0] . ') GROUP BY kind', $this->where([])[1]), 'n', 'kind'));
+    }
+
+    /**
+     * Per la guida dell'AI: su quanti report del catalogo Ramingo conosce la struttura
+     * (grafici e campi usati) e le pagine. Senza struttura l'AI ha solo nome e descrizione.
+     * @return array{total:int, structure:int, pages:int}
+     */
+    public function aiCoverage(): array
+    {
+        [$where, $params] = $this->where([]);
+        $row = $this->db->one(
+            'SELECT COUNT(*) AS total,
+                    SUM(EXISTS (SELECT 1 FROM report_visuals v WHERE v.report_id = i.id)) AS structure,
+                    SUM(EXISTS (SELECT 1 FROM report_pages p WHERE p.report_id = i.id)) AS pages
+               FROM (' . self::BASE . $where . ") i WHERE i.entity_type = 'report'", $params) ?? [];
+        return array_map('intval', ['total' => $row['total'] ?? 0, 'structure' => $row['structure'] ?? 0, 'pages' => $row['pages'] ?? 0]);
+    }
+
+    // ---------------------------------------------------------------- nascosti
+
+    /** Impostazione: prefissi del nome che nascondono un report (uno per riga o separati da virgola). */
+    public const HIDDEN_PREFIXES = 'catalog.hidden_prefixes';
+
+    private ?array $prefixes = null;
+
+    /** @return string[] */
+    public function hiddenPrefixes(): array
+    {
+        if ($this->prefixes === null) {
+            $raw = (string) (new SettingRepository($this->db))->get(self::HIDDEN_PREFIXES);
+            $this->prefixes = array_values(array_unique(array_filter(array_map('trim', preg_split('/[\r\n,]+/', $raw)), 'strlen')));
+        }
+        return $this->prefixes;
+    }
+
+    public function setHiddenPrefixes(array $prefixes): void
+    {
+        $clean = array_values(array_unique(array_filter(array_map(static fn ($p) => mb_substr(trim((string) $p), 0, 40), $prefixes), 'strlen')));
+        (new SettingRepository($this->db))->set(self::HIDDEN_PREFIXES, $clean ? implode("\n", $clean) : null);
+        $this->prefixes = null;
+    }
+
+    /** Nasconde o rimostra un workspace, un report o una dashboard. */
+    public function setHidden(string $kind, string $id, bool $hidden): void
+    {
+        $table = ['workspace' => 'workspaces', 'report' => 'reports', 'dashboard' => 'dashboards'][$kind]
+            ?? throw new \InvalidArgumentException('Elemento non valido.');
+        $this->db->run("UPDATE $table SET hidden = ? WHERE id = ?", [$hidden ? 1 : 0, $id]);
+    }
+
+    /** Quanti elementi sono nascosti in questo momento (per l'interruttore «mostra anche i nascosti»). */
+    public function hiddenCount(): int
+    {
+        [$hidden, $p] = $this->hiddenClause();
+        return (int) $this->db->value('SELECT COUNT(*) FROM (' . self::BASE . ") WHERE NOT ($hidden)", $p);
+    }
+
+    /**
+     * Tutti gli elementi con lo stato di visibilità, per Amministrazione → Nascosti.
+     * Ogni riga ha hidden_reason: null | 'report' | 'workspace' | 'name'.
+     */
+    public function visibilityList(): array
+    {
+        return $this->withHiddenReason($this->db->all(
+            'SELECT entity_type, kind, id, name, workspace_id, workspace_name, item_hidden, ws_hidden
+               FROM (' . self::BASE . ') ORDER BY workspace_name COLLATE NOCASE, name COLLATE NOCASE'));
+    }
+
+    /** Perché un singolo elemento è nascosto (null = visibile), per l'avviso nella sua scheda. */
+    public function hiddenReasonFor(string $entityType, string $id): ?string
+    {
+        $row = $this->db->one('SELECT name, item_hidden, ws_hidden FROM (' . self::BASE . ') WHERE entity_type = ? AND id = ?', [$entityType, $id]);
+        return $row ? $this->hiddenReason($row) : null;
+    }
+
+    /** 'report' (nascosto lui), 'workspace' (nascosto il suo workspace), 'name' (prefisso del nome) oppure null. */
+    public function hiddenReason(array $row): ?string
+    {
+        if (!empty($row['item_hidden'])) {
+            return 'report';
+        }
+        if (!empty($row['ws_hidden'])) {
+            return 'workspace';
+        }
+        foreach ($this->hiddenPrefixes() as $p) {
+            if (mb_stripos((string) $row['name'], $p) === 0) {
+                return 'name';
+            }
+        }
+        return null;
+    }
+
+    private function withHiddenReason(array $rows): array
+    {
+        foreach ($rows as &$r) {
+            $r['hidden_reason'] = $this->hiddenReason($r);
+        }
+        return $rows;
+    }
+
+    /** Condizione SQL «visibile»: né nascosto lui, né il workspace, né un prefisso del nome. */
+    private function hiddenClause(): array
+    {
+        $sql = 'item_hidden = 0 AND ws_hidden = 0';
+        $params = [];
+        foreach ($this->hiddenPrefixes() as $p) {
+            $sql .= " AND name NOT LIKE ? ESCAPE '\\'";
+            $params[] = addcslashes($p, '\\%_') . '%';
+        }
+        return ['(' . $sql . ')', $params];
     }
 
     /**
@@ -225,6 +344,11 @@ final class CatalogRepository extends Repository
                 $sql[] = "(entity_type || ':' || id) IN (" . Database::placeholders($f['keys']) . ')';
                 array_push($params, ...array_values($f['keys']));
             }
+        }
+        if (empty($f['show_hidden'])) {
+            [$hidden, $hp] = $this->hiddenClause();
+            $sql[] = $hidden;
+            array_push($params, ...$hp);
         }
         return [$sql ? ' WHERE ' . implode(' AND ', $sql) : '', $params];
     }

@@ -78,7 +78,23 @@ final class AiController extends BaseController
             'company'       => $conn->company()?->label(),
             'active'        => $this->app->aiAssistant()->describeConnection($this->user),
             'sendDax'       => (bool) $this->app->config()->get('ai.send_expressions', false),
+            'coverage'      => $this->app->repo(CatalogRepository::class)->aiCoverage(),
         ]);
+    }
+
+    /** GET /ai/guida — la stessa guida della pagina «La mia AI», come file HTML da scaricare, stampare o inoltrare. */
+    public function guide(): void
+    {
+        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Disposition: attachment; filename="ramingo-guida-ai.html"');
+        echo $this->view->render('ai/guide_file', [
+            'appName'       => $this->app->config()->get('app.name', 'Ramingo'),
+            'sendDax'       => (bool) $this->app->config()->get('ai.send_expressions', false),
+            'coverage'      => $this->app->repo(CatalogRepository::class)->aiCoverage(),
+            'allowPersonal' => $this->app->aiConnections()->allowPersonal(),
+            'company'       => $this->app->aiConnections()->company()?->label(),
+        ], null);
+        exit;
     }
 
     /** POST /ai/impostazioni */

@@ -39,16 +39,17 @@ $hint = [
 <?php if (!$rows): ?>
     <p class="text-secondary">Nessun nome da mostrare<?= $missing ? ': sono tutti tradotti' : '' ?>.</p>
 <?php else: ?>
-<form method="post" action="<?= url('admin/glossario') ?>">
+<form method="post" action="<?= url('admin/glossario') ?>" data-glossary data-save-url="<?= e(url('admin/glossario/voce')) ?>">
     <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
     <input type="hidden" name="kind" value="<?= e($kind) ?>">
     <p class="small text-secondary"><?= e($hint) ?></p>
     <div class="table-responsive">
     <table class="table table-sm align-middle rg-glossary">
-        <thead><tr><th>Nome tecnico</th><th>Da Power BI</th><th>Nome comprensibile</th><th>Cosa contiene / cosa calcola</th></tr></thead>
+        <colgroup><col class="rg-gl-term"><col class="rg-gl-pbi"><col class="rg-gl-label"><col class="rg-gl-desc"><col class="rg-gl-state"></colgroup>
+        <thead><tr><th>Nome tecnico</th><th>Da Power BI</th><th>Nome comprensibile</th><th>Cosa contiene / cosa calcola</th><th><span class="visually-hidden">Stato</span></th></tr></thead>
         <tbody>
         <?php foreach ($rows as $i => $r): ?>
-            <tr>
+            <tr data-gl-row data-term="<?= e($r['term']) ?>">
                 <td>
                     <code><?= e($r['term']) ?></code>
                     <div class="small text-secondary">usato in <?= (int) $r['reports'] ?> report<?= $r['context'] ? ' · tabella ' . e(mb_strimwidth((string) $r['context'], 0, 60, '…')) : '' ?></div>
@@ -56,16 +57,23 @@ $hint = [
                     <input type="hidden" name="rows[<?= $i ?>][orig_label]" value="<?= e($r['label']) ?>">
                     <input type="hidden" name="rows[<?= $i ?>][orig_description]" value="<?= e($r['description']) ?>">
                 </td>
-                <td class="small"><?php if ($r['pbi_description']): ?><?= e($r['pbi_description']) ?> <?= $view->partial('partials/source_badge', ['source' => Source::PowerBi]) ?><?php else: ?><span class="text-secondary">—</span><?php endif ?></td>
-                <td><input class="form-control form-control-sm" name="rows[<?= $i ?>][label]" value="<?= e($r['label']) ?>" maxlength="120" aria-label="Nome comprensibile per <?= e($r['term']) ?>"></td>
-                <td><textarea class="form-control form-control-sm" name="rows[<?= $i ?>][description]" rows="1" maxlength="1000" aria-label="Descrizione per <?= e($r['term']) ?>"><?= e($r['description']) ?></textarea></td>
+                <td class="small"><?php if ($r['pbi_description']): ?>
+                    <span data-gl-pbi><?= e($r['pbi_description']) ?></span> <?= $view->partial('partials/source_badge', ['source' => Source::PowerBi]) ?>
+                    <button type="button" class="rg-gl-use" data-gl-use title="Copia questa descrizione in «Cosa contiene»">Usa questa</button>
+                <?php else: ?><span class="text-secondary">—</span><?php endif ?></td>
+                <td><input class="form-control form-control-sm" name="rows[<?= $i ?>][label]" value="<?= e($r['label']) ?>" maxlength="120" aria-label="Nome comprensibile per <?= e($r['term']) ?>" data-gl-label></td>
+                <td><textarea class="form-control form-control-sm rg-gl-text" name="rows[<?= $i ?>][description]" rows="2" maxlength="1000" aria-label="Descrizione per <?= e($r['term']) ?>" data-gl-desc><?= e($r['description']) ?></textarea></td>
+                <td class="rg-gl-status" data-gl-status aria-live="polite"><?= ($r['label'] || $r['description']) ? '<i class="fa-solid fa-check" title="Tradotto"></i>' : '' ?></td>
             </tr>
         <?php endforeach ?>
         </tbody>
     </table>
     </div>
-    <div class="rg-sticky-save"><button class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> Salva le modifiche</button>
+    <div class="rg-sticky-save" data-gl-manual><button class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> Salva le modifiche</button>
         <span class="small text-secondary">Vengono salvate solo le righe cambiate. Lasciare vuoti nome e descrizione toglie la voce.</span></div>
+    <p class="small text-secondary" data-gl-auto hidden><i class="fa-solid fa-circle-info"></i>
+        Ogni riga si salva da sola quando passi alla successiva (Tab o clic altrove): compare <i class="fa-solid fa-check"></i>.
+        Svuotare nome e descrizione toglie la voce.</p>
 </form>
 <?php if ($pages > 1): ?>
     <nav class="d-flex gap-1 mt-3">

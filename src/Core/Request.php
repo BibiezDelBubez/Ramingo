@@ -12,6 +12,8 @@ final class Request
         private readonly array $query,
         private readonly array $body,
         public readonly string $ip,
+        /** Indirizzo su cui il server ha ricevuto la richiesta: uguale a $ip = browser sulla stessa macchina. */
+        public readonly string $serverIp = '',
     ) {
     }
 
@@ -28,6 +30,7 @@ final class Request
             $_GET,
             $_POST,
             $_SERVER['REMOTE_ADDR'] ?? '',
+            $_SERVER['SERVER_ADDR'] ?? '',
         );
     }
 

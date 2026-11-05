@@ -7,6 +7,7 @@ $open  = $c['app_url'] ?: $c['web_url'];
 <article class="rg-card kind-<?= e($c['kind']) ?>">
     <div class="rg-card-top">
         <span class="rg-kind"><i class="<?= e($icons[$c['kind']]) ?>" aria-hidden="true"></i><?= e($kinds[$c['kind']]) ?></span>
+        <?php if (!empty($c['hidden_reason'])): ?><span class="rg-hidden-badge" title="Non compare nel catalogo per gli altri"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Nascosto</span><?php endif ?>
         <?php if ($c['endorsement']): ?>
             <span class="rg-endorse <?= $c['endorsement'] === 'Certified' ? 'certified' : 'promoted' ?>" title="Approvazione impostata in Power BI">
                 <i class="fa-solid <?= $c['endorsement'] === 'Certified' ? 'fa-badge-check' : 'fa-thumbs-up' ?>" aria-hidden="true"></i>

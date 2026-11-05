@@ -70,8 +70,12 @@ return [
         'redirect_uri'  => 'https://ramingo.azienda.local/auth/callback',
         // Amministratori di Ramingo (gestione aree, descrizioni, stato sync)
         'admin_emails'  => [ 'admin@azienda.it' ],
-        // Con mode = 'none' sono admin solo le richieste da questi IP
+        // Con mode = 'none': chi apre Ramingo dalla stessa macchina è amministratore in automatico,
+        // come chi arriva da questi IP. Dagli altri PC serve la password qui sotto.
         'admin_ips'     => ['127.0.0.1', '::1'],
+        // Password per Amministrazione dagli altri PC (si cambia anche da Amministrazione → Accesso amministratore,
+        // e quella del pannello vince su questa). '' = solo dalla stessa macchina.
+        'admin_password' => 'admin',
     ],
 
     'catalog' => [
@@ -80,6 +84,9 @@ return [
         // true = nasconde dal catalogo i report a cui l'utente (probabilmente) non ha accesso
         'hide_inaccessible' => false,
         'page_size'         => 48,
+        // Data dell'ultimo aggiornamento dei dati sulle schede, filtro «Dati aggiornati», ordine «Dati più recenti».
+        // Spenta finché le date si leggono solo con la sincronizzazione manuale: sarebbero vecchie.
+        'show_data_dates'   => false,
         // Oltre questi giorni la data dei dati è evidenziata in ambra
         'stale_days'        => 7,
         // Ricerche proposte sotto la barra della pagina iniziale ([] = nessuna)

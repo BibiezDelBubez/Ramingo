@@ -37,6 +37,7 @@ final class GlossaryController extends BaseController
             'total'   => $result['total'],
             'rows'    => $result['rows'],
             'counts'  => $repo->missingCounts(),
+            'scripts' => ['glossary.js'],
         ]);
     }
 
@@ -62,11 +63,30 @@ final class GlossaryController extends BaseController
             $changed++;
         }
         if ($changed) {
-            // i nomi comprensibili entrano nelle sintesi e nella ricerca
-            $this->app->insights()->refreshAll();
-            $this->app->indexer()->rebuildAll();
+            $this->propagate();
         }
         Session::flash('success', $changed ? "Glossario aggiornato ($changed voci)." : 'Nessuna modifica.');
         $this->back();
+    }
+
+    /** POST /admin/glossario/voce — salva una sola voce (salvataggio automatico della pagina), risponde in JSON */
+    public function saveOne(): void
+    {
+        $kind = (string) $this->request->input('kind');
+        $term = trim((string) $this->request->input('term', ''));
+        if (!array_key_exists($kind, GlossaryRepository::KINDS) || $term === '') {
+            $this->json(['ok' => false, 'message' => 'Voce non valida.'], 422);
+        }
+        $this->app->repo(GlossaryRepository::class)->save($kind, $term,
+            (string) $this->request->input('label', ''), (string) $this->request->input('description', ''), $this->user->displayIdentity());
+        $this->propagate();
+        $this->json(['ok' => true]);
+    }
+
+    /** I nomi comprensibili entrano nelle sintesi dei report e nella ricerca. */
+    private function propagate(): void
+    {
+        $this->app->insights()->refreshAll();
+        $this->app->indexer()->rebuildAll();
     }
 }

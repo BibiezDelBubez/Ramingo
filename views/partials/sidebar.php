@@ -79,6 +79,7 @@ $appr = $facets['endorsements'];
             </details>
         <?php endif ?>
 
+        <?php if (!empty($showDates)): ?>
         <details class="rg-facet" open>
             <summary>Dati aggiornati<?= $filters->fresh !== '' ? ' <span class="rg-facet-count">(1)</span>' : '' ?></summary>
             <label class="rg-check"><input type="radio" name="fresh" value="" <?= $filters->fresh === '' ? 'checked' : '' ?> data-autosubmit-check>
@@ -88,6 +89,7 @@ $appr = $facets['endorsements'];
                     <span class="rg-check-label"><?= e($l) ?></span><span class="rg-n"><?= (int) ($facets['fresh'][$k] ?? 0) ?></span></label>
             <?php endforeach ?>
         </details>
+        <?php endif ?>
 
         <details class="rg-facet">
             <summary>Workspace<?= $picked('ws') ?> <span class="rg-facet-note">cartelle di Power BI</span></summary>
@@ -134,4 +136,11 @@ $appr = $facets['endorsements'];
 
         <noscript><button class="btn btn-sm btn-primary mt-2">Applica i filtri</button></noscript>
     </form>
+    <?php if (!empty($hiddenCount)): ?>
+        <?php /* Volutamente discreto: serve a chi lavora sui dati, non a chi consulta */ ?>
+        <button type="button" class="rg-hidden-toggle" data-show-hidden="<?= !empty($showHidden) ? '0' : '1' ?>">
+            <i class="fa-solid <?= !empty($showHidden) ? 'fa-eye-slash' : 'fa-eye' ?>" aria-hidden="true"></i>
+            <?= !empty($showHidden) ? 'Nascondi di nuovo i report nascosti' : 'Mostra anche i nascosti (' . (int) $hiddenCount . ')' ?>
+        </button>
+    <?php endif ?>
 </details>

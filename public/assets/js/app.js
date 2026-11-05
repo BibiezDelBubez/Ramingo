@@ -144,6 +144,14 @@
     document.querySelectorAll('[data-side-hide]').forEach(function (b) { b.addEventListener('click', function () { setSide(true); }); });
     document.querySelectorAll('[data-side-show]').forEach(function (b) { b.addEventListener('click', function () { setSide(false); }); });
 
+    // «Mostra anche i nascosti»: scelta di questo browser, ricordata in un cookie
+    document.querySelectorAll('[data-show-hidden]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.cookie = 'rg_hidden=' + (b.dataset.showHidden === '1' ? 'shown' : '') + '; path=/; max-age=' + (b.dataset.showHidden === '1' ? 31536000 : 0) + '; SameSite=Lax';
+            window.location.reload();
+        });
+    });
+
     // Su schermi stretti la colonna filtri parte chiusa (pulsante «Filtri»), se non ci sono filtri attivi
     var side = document.querySelector('[data-side]');
     if (side && window.matchMedia('(max-width: 991px)').matches && !side.querySelector('input:checked:not([value=""])')) {

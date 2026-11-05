@@ -19,14 +19,23 @@ final class CurrentUser
         public readonly bool $groupsComplete,
         private readonly bool $admin,
         private readonly bool $authenticated,
+        /** Perché è amministratore: 'local' (stessa macchina o IP in elenco), 'password', 'email' oppure null. */
+        public readonly ?string $adminVia = null,
     ) {
     }
+
+    /** Chiave di sessione impostata dopo la password di amministrazione giusta. */
+    public const SESSION_ADMIN = 'admin_password_ok';
 
     public static function resolve(Config $config, Request $request): self
     {
         if ($config->get('auth.mode', 'none') !== 'entra') {
-            $isAdmin = in_array($request->ip, (array) $config->get('auth.admin_ips', []), true);
-            return new self(null, 'Utente locale', null, [], false, $isAdmin, true);
+            // Senza login: amministratore automatico se il browser è sulla stessa macchina del server
+            // (o su un IP in auth.admin_ips); da un altro PC serve la password di amministrazione.
+            $via = self::isLocal($request) || in_array($request->ip, (array) $config->get('auth.admin_ips', []), true)
+                ? 'local'
+                : (Session::get(self::SESSION_ADMIN) === true ? 'password' : null);
+            return new self(null, 'Utente locale', null, [], false, $via !== null, true, $via);
         }
 
         $u = Session::get('user');
@@ -40,9 +49,20 @@ final class CurrentUser
             $u['email'],
             $u['groups'] ?? [],
             (bool) ($u['groups_complete'] ?? false),
-            in_array(strtolower((string) $u['email']), $admins, true),
+            $isAdmin = in_array(strtolower((string) $u['email']), $admins, true),
             true,
+            $isAdmin ? 'email' : null,
         );
+    }
+
+    /** Browser e server sulla stessa macchina: indirizzo di loopback, o stesso indirizzo da entrambe le parti. */
+    private static function isLocal(Request $request): bool
+    {
+        $ip = $request->ip;
+        if (in_array($ip, ['127.0.0.1', '::1', '::ffff:127.0.0.1'], true)) {
+            return true;
+        }
+        return $ip !== '' && $request->serverIp !== '' && $ip === $request->serverIp;
     }
 
     public function isAuthenticated(): bool

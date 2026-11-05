@@ -1,13 +1,23 @@
 <?php
 /**
  * @var array $providers  @var ?array $personal  @var ?string $personalError  @var bool $allowPersonal
- * @var ?string $company  @var ?array $active  @var bool $sendDax
+ * @var ?string $company  @var ?array $active  @var bool $sendDax  @var array $coverage
  */
 $current = $personal['provider'] ?? array_key_first($providers);
 ?>
 <h1 class="h3">La mia AI</h1>
 <p class="text-secondary">Ramingo può usare un modello di intelligenza artificiale per spiegare report e misure e per suggerire quale report usare.
     Tutto ciò che produce è marcato <?= $view->partial('partials/source_badge', ['source' => Ramingo\Domain\Source::Auto]) ?> e va verificato.</p>
+
+<details class="rg-section rg-guide" open>
+    <summary class="d-flex flex-wrap align-items-center gap-2">
+        <span class="h5 mb-0 flex-grow-1"><i class="fa-solid fa-circle-info"></i> Cosa fa l'AI in Ramingo</span>
+        <a class="btn btn-sm btn-outline-primary" href="<?= url('ai/guida') ?>"><i class="fa-solid fa-download"></i> Scarica la guida</a>
+    </summary>
+    <div class="rg-guide-body">
+        <?= $view->partial('partials/ai_guide', ['coverage' => $coverage, 'sendDax' => $sendDax, 'allowPersonal' => $allowPersonal, 'company' => $company, 'hl' => 'h3']) ?>
+    </div>
+</details>
 
 <div class="row g-4">
     <div class="col-lg-5">

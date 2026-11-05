@@ -21,6 +21,7 @@ final class CardPresenter
         private readonly TagRepository $tags,
         private readonly AccessService $access,
         private readonly int $staleDays = 7,   // oltre, la data dei dati è evidenziata
+        private readonly bool $showDates = true, // false = nessuna data dei dati sulle schede
     ) {
     }
 
@@ -49,7 +50,7 @@ final class CardPresenter
                 'tags'        => array_values(array_filter($tags[$r['entity_type']][$r['id']] ?? [], static fn ($t) => $t['source'] === 'manual')),
                 'access'      => $access[$key] ?? AccessService::UNKNOWN,
                 // data dei DATI (solo report: le dashboard non hanno un modello proprio)
-                'freshness'   => $r['entity_type'] === 'report' ? Freshness::of($r, $this->staleDays) : null,
+                'freshness'   => $this->showDates && $r['entity_type'] === 'report' ? Freshness::of($r, $this->staleDays) : null,
             ]);
         }, $rows);
     }

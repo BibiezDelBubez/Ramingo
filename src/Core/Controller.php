@@ -81,14 +81,20 @@ abstract class Controller
     protected function back(): never
     {
         $ref = $_SERVER['HTTP_REFERER'] ?? '';
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        // Solo redirect interni: niente open redirect.
-        $this->redirect($ref !== '' && parse_url($ref, PHP_URL_HOST) === $host ? $ref : url());
+        $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+        // Solo redirect interni: niente open redirect. HTTP_HOST contiene anche la porta (localhost:8080).
+        $p = parse_url($ref);
+        $refHost = strtolower(($p['host'] ?? '') . (isset($p['port']) ? ':' . $p['port'] : ''));
+        $this->redirect($ref !== '' && $refHost === $host ? $ref : url());
     }
 
     protected function requireAdmin(): void
     {
         if (!$this->user->isAdmin()) {
+            if ($this->app->config()->get('auth.mode', 'none') !== 'entra' && !$this->request->isPost() && !$this->request->wantsJson()) {
+                Session::set('after_admin', $_SERVER['REQUEST_URI'] ?? url('admin'));
+                $this->redirect(url('admin/accesso'));
+            }
             $this->abort(403, 'Questa sezione è riservata agli amministratori di Ramingo.');
         }
     }

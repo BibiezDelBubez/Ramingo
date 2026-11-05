@@ -1,5 +1,11 @@
 <?php /** @var array $runs  @var bool $fts  @var string $pbiMode  @var bool $aiEnabled  @var ?string $aiCompany  @var ?string $aiCompanyError  @var array $aiRequests */ ?>
 <h1 class="h3">Amministrazione</h1>
+<?php if (!empty($defaultPassword)): ?>
+    <div class="alert alert-warning">
+        La password di amministrazione è ancora quella iniziale, «admin»: chi è in rete può entrare qui.
+        <a href="<?= url('admin/accesso') ?>">Cambiala</a>.
+    </div>
+<?php endif ?>
 
 <div class="rg-grid mb-4">
     <a class="rg-card rg-admin-link" href="<?= url('admin/powerbi') ?>">
@@ -22,9 +28,17 @@
         <h2 class="h6 mb-1"><i class="fa-solid fa-file-csv"></i> Esporta e importa i testi</h2>
         <span class="small text-secondary">Descrizioni, tag e categorie di tutti i report in un file per Excel, da modificare e reimportare.</span>
     </a>
+    <a class="rg-card rg-admin-link" href="<?= url('admin/nascosti') ?>">
+        <h2 class="h6 mb-1"><i class="fa-solid fa-eye-slash"></i> Nascosti dal catalogo</h2>
+        <span class="small text-secondary">Report tecnici o di prova da non mostrare ai colleghi: per workspace, uno per uno o per nome.</span>
+    </a>
     <a class="rg-card rg-admin-link" href="<?= url('admin/eliminati') ?>">
         <h2 class="h6 mb-1"><i class="fa-solid fa-box-archive"></i> Eliminati da Power BI</h2>
         <span class="small text-secondary">Report spariti da Power BI: spostare i loro testi sul sostituto, eliminarli del tutto.</span>
+    </a>
+    <a class="rg-card rg-admin-link" href="<?= url('admin/accesso') ?>">
+        <h2 class="h6 mb-1"><i class="fa-solid fa-key"></i> Accesso amministratore</h2>
+        <span class="small text-secondary">Password per entrare qui da un PC diverso da quello di Ramingo.</span>
     </a>
     <a class="rg-card rg-admin-link" href="<?= url('admin/ricerche') ?>">
         <h2 class="h6 mb-1"><i class="fa-solid fa-magnifying-glass"></i> Ricerche</h2>

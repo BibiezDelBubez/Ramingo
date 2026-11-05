@@ -24,7 +24,14 @@ abstract class BaseController extends Controller
             $this->app->repo(TagRepository::class),
             $this->app->access(),
             (int) $this->app->config()->get('catalog.stale_days', 7),
+            $this->showDates(),
         );
+    }
+
+    /** Date dei dati visibili? (catalog.show_data_dates) */
+    protected function showDates(): bool
+    {
+        return (bool) $this->app->config()->get('catalog.show_data_dates', false);
     }
 
     /**
@@ -37,7 +44,7 @@ abstract class BaseController extends Controller
             return ['q' => $q, 'concepts' => [], 'mode' => 'all', 'cards' => []];
         }
         $result = $this->app->search()->search($q, $limit * 2);
-        $rows   = $this->app->repo(\Ramingo\Models\CatalogRepository::class)->byKeys(array_keys($result['hits']));
+        $rows   = $this->app->repo(\Ramingo\Models\CatalogRepository::class)->byKeys(array_keys($result['hits']), $this->showHidden());
         $cards  = $this->visibleCards($this->cards()->present($rows, $this->user));
         foreach ($cards as &$c) {
             $c['why'] = $result['hits'][$c['key']]['why'] ?? [];
@@ -96,7 +103,7 @@ abstract class BaseController extends Controller
         ];
     }
 
-    /** Ordinamenti del catalogo (chiave URL => etichetta). Con una ricerca si aggiunge «Più pertinenti». */
+    /** Ordinamenti del catalogo (chiave URL => etichetta). Con una ricerca si aggiunge «Prima chi ha la parola nel nome» (vedi SearchService::FIELD_RANK). */
     public const SORTS = ['area' => 'Per categoria', 'name' => 'Per nome', 'recent' => 'Dati più recenti'];
 
     /**
@@ -110,6 +117,7 @@ abstract class BaseController extends Controller
         $cfg     = $this->app->config();
         $filters = CatalogFilters::fromRequest($this->request);
         $query   = $filters->toQuery($areas);
+        $query['show_hidden'] = $this->showHidden();
 
         $search = null;
         if (mb_strlen($q) >= 2) {
@@ -117,7 +125,10 @@ abstract class BaseController extends Controller
             $query['keys'] = array_keys($search['hits']);
         }
 
-        $sorts = $search ? ['relevance' => 'Più pertinenti'] + self::SORTS : self::SORTS;
+        $sorts = $search ? ['relevance' => 'Prima chi ha la parola nel nome'] + self::SORTS : self::SORTS;
+        if (!$this->showDates()) { // senza date: niente ordine né filtro per data
+            unset($sorts['recent'], $query['fresh']);
+        }
         $defaultSort = $search ? 'relevance' : 'area';
         $sort = (string) $this->request->query('sort', $defaultSort);
         if (!isset($sorts[$sort])) {
@@ -165,15 +176,27 @@ abstract class BaseController extends Controller
             'viewMode'   => $view,
             'tagsExist'  => (bool) $this->app->repo(TagRepository::class)->inUse(), // la sezione Tag resta anche se i report filtrati non ne hanno
             'sideHidden' => ($_COOKIE['rg_side'] ?? '') === 'hidden', // colonna filtri nascosta dall'utente (computer)
+            'showHidden' => $query['show_hidden'],
+            'hiddenCount' => $catalog->hiddenCount(),
             'total'      => $total,
             'page'       => $page,
             'pages'      => $pages,
             'pageSize'   => $pageSize,
-            'groups'     => $this->groups($cards, $sort === 'area' && !$search, $sort !== 'recent' && $sort !== 'relevance', (bool) $search, $areas),
+            'groups'     => $this->groups($cards, $sort === 'area' && !$search, $this->showDates() && $sort !== 'recent' && $sort !== 'relevance', (bool) $search, $areas),
+            'showDates'  => $this->showDates(),
             'facets'     => $facets,
             'active'     => $this->activeFilters($filters, $facets, $areas, $link),
             'cardsCount' => count($cards),
         ];
+    }
+
+    /**
+     * «Mostra anche i nascosti»: scelta del singolo browser (cookie), pensata per chi lavora sui dati.
+     * Non è una protezione: i dati restano protetti dai permessi di Power BI.
+     */
+    protected function showHidden(): bool
+    {
+        return ($_COOKIE['rg_hidden'] ?? '') === 'shown';
     }
 
     /** Schede o elenco: scelta dell'utente, ricordata in un cookie. */

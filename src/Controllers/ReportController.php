@@ -50,8 +50,9 @@ final class ReportController extends BaseController
         $this->render('report/show', [
             'title'        => $report['name'],
             'r'            => $report,
+            'hiddenReason' => $this->app->repo(\Ramingo\Models\CatalogRepository::class)->hiddenReasonFor('report', $id),
             'access'       => $access,
-            'freshness'    => \Ramingo\Services\Catalog\Freshness::of($report, (int) $this->app->config()->get('catalog.stale_days', 7)),
+            'freshness'    => $this->showDates() ? \Ramingo\Services\Catalog\Freshness::of($report, (int) $this->app->config()->get('catalog.stale_days', 7)) : null,
             'notes'        => $notes,
             'description'  => $description,
             'tags'         => $this->app->repo(TagRepository::class)->forEntities('report', [$id])[$id] ?? [],
