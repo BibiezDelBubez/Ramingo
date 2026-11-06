@@ -3,3 +3,4 @@ storage/*.sqlite*
 storage/*.lock
 storage/logs/*.log
 storage/*.tgz
+config/app.key

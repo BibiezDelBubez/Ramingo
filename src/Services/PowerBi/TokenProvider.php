@@ -24,6 +24,9 @@ final class TokenProvider
         if ($this->token !== null && time() < $this->expiresAt - 120) {
             return $this->token;
         }
+        if (empty($this->cfg['client_secret']) && !empty($this->cfg['client_secret_error'])) {
+            throw new HttpException('Segreto Power BI salvato ma illeggibile: ' . $this->cfg['client_secret_error']);
+        }
         foreach (['tenant_id', 'client_id', 'client_secret'] as $k) {
             if (empty($this->cfg[$k])) {
                 throw new HttpException("Configurazione Power BI incompleta: manca powerbi.$k");

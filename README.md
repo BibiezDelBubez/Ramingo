@@ -79,7 +79,8 @@ L'esito di ogni sincronizzazione è visibile in **Amministrazione** e nei log in
 | `php bin\migrate.php [--seed-areas]` | crea/aggiorna il database (e aree di esempio) |
 | `php bin\sync.php --mode=full\|incremental` | legge Power BI e aggiorna il catalogo |
 | `php bin\reindex.php` | ricalcola interpretazioni automatiche e indice (dopo aver cambiato i sinonimi) |
-| `php bin\generate-key.php` | genera la chiave di cifratura per le chiavi AI personali |
+| `php bin\check.php` | controlla l'installazione (estensioni, database, cifratura, certificati) e dice cosa sistemare |
+| `php bin\generate-key.php` | genera una chiave di cifratura da mettere in `security.app_key` (facoltativo) |
 | `php bin\import-definition.php --report=<id> --path=<file.pbix\|cartella .Report>` | importa pagine e visual da una definizione tecnica |
 
 ## Migliorare la ricerca
@@ -98,5 +99,6 @@ bin/         comandi da riga di comando
 config/      configurazione e vocabolario
 database/    schema e dati di esempio
 storage/     database SQLite e log (non pubblico)
+resources/   certificati HTTPS di riserva (cacert.pem)
 docs/        documentazione
 ```

@@ -22,7 +22,9 @@ return [
         'timeout'     => 60,
         'max_retries' => 3,
         'proxy'       => '',          // es. 'http://proxy.azienda.local:8080' se c'è un proxy
-        'ca_bundle'   => '',          // es. 'C:/xampp/php/extras/ssl/cacert.pem' (vedi docs/SETUP_POWERBI.md)
+        // Di norma vuoto: Ramingo trova da solo i certificati (XAMPP, php.ini o resources/cacert.pem).
+        // Serve solo se un proxy aziendale ispeziona l'HTTPS con un suo certificato.
+        'ca_bundle'   => '',
     ],
 
     'powerbi' => [
@@ -110,8 +112,10 @@ return [
         ],
     ],
 
-    // Chiave per cifrare le chiavi AI personali (64 caratteri esadecimali).
-    // Generarla con:  php bin\generate-key.php   — se cambia, le chiavi personali vanno reinserite.
+    // Chiave per cifrare i segreti salvati nel database (segreto Power BI, chiavi AI personali).
+    // Vuota = Ramingo la crea da solo in config/app.key. Se la compili: 64 caratteri esadecimali
+    // (php bin\generate-key.php). Spostando Ramingo su un'altra macchina copia anche config/,
+    // altrimenti i segreti salvati vanno reinseriti.
     'security' => [
         'app_key' => '',
     ],

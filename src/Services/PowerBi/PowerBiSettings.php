@@ -17,6 +17,9 @@ final class PowerBiSettings
     public const EDITABLE = ['mode', 'tenant_id', 'client_id', 'client_secret'];
     private const GUID = '~^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$~i';
 
+    /** Perché il segreto salvato non si legge (null = si legge, oppure non c'è). */
+    private ?string $secretError = null;
+
     public function __construct(
         private readonly Config $config,
         private readonly SettingRepository $repo,
@@ -34,6 +37,7 @@ final class PowerBiSettings
             }
         }
         $cfg['mode'] = ($cfg['mode'] ?? '') === 'live' ? 'live' : 'fixture';
+        $cfg['client_secret_error'] = $this->secretError;
         return $cfg;
     }
 
@@ -55,6 +59,13 @@ final class PowerBiSettings
     {
         $c = $this->all();
         return self::filled($c['tenant_id'] ?? '') && self::filled($c['client_id'] ?? '') && self::filled($c['client_secret'] ?? '');
+    }
+
+    /** Il segreto è salvato ma non si riesce a leggere: spiegazione in italiano. */
+    public function secretError(): ?string
+    {
+        $this->all();
+        return $this->secretError;
     }
 
     /** Ultime 4 cifre del segreto, per riconoscerlo senza mostrarlo. */
@@ -85,11 +96,12 @@ final class PowerBiSettings
         $secret = trim((string) ($input['client_secret'] ?? ''));
         if ($secret !== '' && $this->source('client_secret') !== 'config') {
             if (!$this->box->available()) {
-                $errors[] = 'Il segreto non può essere salvato cifrato: riavvia Apache dal pannello di XAMPP (serve l\'estensione sodium) e riprova.';
+                $errors[] = 'Il segreto non può essere salvato cifrato: ' . $this->box->problem();
             } elseif (preg_match(self::GUID, $secret)) {
                 $errors[] = 'Sembra che tu abbia incollato l\'«ID segreto». Serve la colonna «Valore».';
             } else {
                 $this->repo->set('powerbi.client_secret', $this->box->encrypt($secret));
+                $this->secretError = null;
             }
         }
         return $errors;
@@ -105,9 +117,16 @@ final class PowerBiSettings
         $v = $this->repo->get('powerbi.' . $key);
         if ($v !== null && $key === 'client_secret') {
             try {
-                return $this->box->decrypt($v);
-            } catch (\Throwable) {
-                return null; // chiave di cifratura cambiata o sodium assente: va reinserito
+                $plain = $this->box->decrypt($v);
+                $this->secretError = null;
+                if ($this->box->needsUpgrade($v)) {
+                    // Formato vecchio (sodium): lo riscrivo nel formato nuovo, leggibile ovunque.
+                    $this->repo->set('powerbi.client_secret', $this->box->encrypt($plain));
+                }
+                return $plain;
+            } catch (\Throwable $e) {
+                $this->secretError = $e->getMessage();
+                return null;
             }
         }
         return $v;

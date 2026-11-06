@@ -6,6 +6,7 @@ namespace Ramingo\Controllers;
 use Ramingo\Core\Session;
 use Ramingo\Models\MaintenanceRepository;
 use Ramingo\Models\SyncRunRepository;
+use Ramingo\Services\Doctor;
 use Ramingo\Services\PowerBi\ConnectionTest;
 
 /** Amministrazione → Collegamento Power BI: credenziali, prova, cambio modalità, sincronizzazione. */
@@ -31,7 +32,9 @@ final class PowerBiAdminController extends BaseController
             'sources'   => array_combine($s::EDITABLE, array_map([$s, 'source'], $s::EDITABLE)),
             'hint'      => $s->secretHint(),
             'complete'  => $s->isComplete(),
-            'canEncrypt'=> $this->app->secretBox()->available(),
+            'encryptProblem' => $this->app->secretBox()->problem(),
+            'secretError'    => $s->secretError(),
+            'checks'    => Doctor::problems((new Doctor($this->app))->run()),
             'runs'      => $runs,
             'running'   => ($runs[0]['status'] ?? '') === 'running',
             'test'      => $test,

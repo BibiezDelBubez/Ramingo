@@ -27,10 +27,10 @@ final class BackgroundSync
         }
     }
 
-    /** php.exe: da config (app.php_cli) oppure accanto al php.ini in uso (XAMPP). */
-    private function phpBinary(): string
+    /** php.exe: da config (app.php_cli, se esiste) oppure accanto al php.ini in uso (XAMPP). */
+    public function phpBinary(): string
     {
-        if ($this->phpCli) {
+        if ($this->phpCli && is_file($this->phpCli)) {
             return $this->phpCli;
         }
         if (PHP_SAPI === 'cli') {

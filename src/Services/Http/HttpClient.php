@@ -11,8 +11,23 @@ use Ramingo\Services\Logger;
  */
 final class HttpClient
 {
+    /** @var array{path:?string, source:string, warning:?string}|null */
+    private ?array $ca = null;
+
     public function __construct(private readonly array $options, private readonly Logger $logger)
     {
+    }
+
+    /** File dei certificati in uso (vedi CaBundle). */
+    public function caBundle(): array
+    {
+        if ($this->ca === null) {
+            $this->ca = CaBundle::resolve($this->options['ca_bundle'] ?? '');
+            if ($this->ca['warning'] !== null) {
+                $this->logger->warning($this->ca['warning']);
+            }
+        }
+        return $this->ca;
     }
 
     /** @return array{status:int, body:string, json:mixed, headers:array<string,string>} */
@@ -75,17 +90,24 @@ final class HttpClient
         if ($body !== null) {
             $opts[CURLOPT_POSTFIELDS] = $body;
         }
-        if (!empty($this->options['ca_bundle'])) {
-            $opts[CURLOPT_CAINFO] = $this->options['ca_bundle'];
+        if (($ca = $this->caBundle()['path']) !== null) {
+            $opts[CURLOPT_CAINFO] = $ca;
         }
         if (!empty($this->options['proxy'])) {
             $opts[CURLOPT_PROXY] = $this->options['proxy'];
         }
         curl_setopt_array($ch, $opts);
+        if (DIRECTORY_SEPARATOR === '\\' && defined('CURLSSLOPT_NATIVE_CA')) {
+            // Anche i certificati di Windows (es. quelli aziendali). Se questa cURL non lo supporta, pazienza.
+            @curl_setopt($ch, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
+        }
         $raw = curl_exec($ch);
         if ($raw === false) {
             $err = curl_error($ch);
             curl_close($ch);
+            if (stripos($err, 'certificate') !== false || stripos($err, 'SSL') !== false) {
+                $err .= ' (certificati usati: ' . ($this->caBundle()['path'] ?? $this->caBundle()['source']) . ')';
+            }
             throw new HttpException('Errore di rete verso ' . $this->safeUrl($url) . ': ' . $err);
         }
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);

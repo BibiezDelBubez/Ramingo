@@ -96,10 +96,13 @@ final class App
         ));
     }
 
-    /** Cifratura dei segreti salvati nel database (chiave: security.app_key). */
+    /** Cifratura dei segreti salvati nel database (chiave: security.app_key, oppure config/app.key creata da sola). */
     public function secretBox(): \Ramingo\Services\Ai\SecretBox
     {
-        return $this->service('secretbox', fn () => new \Ramingo\Services\Ai\SecretBox((string) $this->config->get('security.app_key', '')));
+        return $this->service('secretbox', fn () => new \Ramingo\Services\Ai\SecretBox(
+            (string) $this->config->get('security.app_key', ''),
+            $this->path('config/app.key'),
+        ));
     }
 
     public function backgroundSync(): \Ramingo\Services\BackgroundSync

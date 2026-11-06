@@ -25,7 +25,7 @@ L'opzione più prudente è **Azure OpenAI nel tenant aziendale** o un **modello 
 
 1. **Aziendale**: configurata dall'amministratore in `config/config.php` → `ai.company`. Vale per tutti.
 2. **Personale**: ogni utente la imposta in **La mia AI**. Se presente, ha la precedenza per le sue richieste.
-   - con login Entra: salvata nel database **cifrata** (libsodium) con `security.app_key`, mai mostrata di nuovo;
+   - con login Entra: salvata nel database **cifrata** (AES-256-GCM, estensione openssl) con `security.app_key` o `config/app.key`, mai mostrata di nuovo;
    - senza login: resta solo nella sessione del browser (senza identità non si può legare a una persona).
    - si può disattivare con `ai.allow_user_keys = false`.
 
@@ -47,9 +47,8 @@ Microsoft Copilot (M365) non offre una chiave API da inserire: l'equivalente azi
 
 1. `config/config.php` → sezione `ai` (già presente, `enabled => true`).
 2. Per la chiave aziendale compilare `ai.company`.
-3. Per salvare chiavi personali con login Entra:
-   - in `php.ini` togliere il `;` davanti a `extension=sodium` e riavviare Apache;
-   - `php bin\generate-key.php` → copiare il valore in `security.app_key`.
+3. Chiavi personali con login Entra: non serve altro. La chiave di cifratura si crea da sola in
+   `config/app.key` (oppure si indica in `security.app_key`, vedi `php bin\generate-key.php`).
 4. `php bin\migrate.php` (crea le tabelle `user_ai_settings` e `ai_requests`).
 
 ## Controllo

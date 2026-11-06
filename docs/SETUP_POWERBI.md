@@ -108,11 +108,17 @@ e poi **Passa ai dati reali**, che cancella i dati di esempio e avvia la prima s
 
 Se il server esce su Internet tramite proxy: `'http' => ['proxy' => 'http://proxy:8080']`.
 
-Se compare *"SSL certificate problem: unable to get local issuer certificate"*, PHP non trova
-l'elenco delle autorità di certificazione. Con XAMPP di solito esiste già
-`C:\xampp\apache\bin\curl-ca-bundle.crt`: indicarlo in `'http' => ['ca_bundle' => ...]`
-(oppure in `php.ini` → `curl.cainfo`). Se il proxy aziendale ispeziona il traffico HTTPS,
-aggiungere al bundle il certificato radice aziendale. **Non disattivare mai la verifica SSL.**
+I certificati HTTPS si trovano da soli: Ramingo usa quelli di XAMPP accanto al PHP in uso, oppure
+`resources/cacert.pem`, e su Windows anche quelli installati in Windows. `http.ca_bundle` resta vuoto.
+Serve compilarlo solo se il proxy aziendale ispeziona il traffico HTTPS e il suo certificato radice non è
+installato in Windows: in quel caso indicare un file che contenga anche quel certificato.
+**Non disattivare mai la verifica SSL.**
+
+### Spostare Ramingo su un'altra macchina
+
+Copiare tutta la cartella, **compresa `config/`** (contiene la chiave che cifra il segreto salvato nel
+database), poi eseguire `php bin\migrate.php` e `php bin\check.php`. Il controllo dice in una riga cosa
+sistemare; lo stesso controllo, per il PHP di Apache, compare in Amministrazione → Collegamento Power BI.
 
 ### Prima sincronizzazione
 

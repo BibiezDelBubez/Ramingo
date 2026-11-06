@@ -92,11 +92,14 @@ final class ConnectionTest
                 return $text;
             }
         }
+        if (str_contains($raw, 'Segreto Power BI salvato ma illeggibile')) {
+            return $raw;
+        }
         if (str_contains($raw, 'Configurazione Power BI incompleta')) {
             return 'Mancano dei valori: compila tenant ID, client ID e segreto.';
         }
         if (str_contains($raw, 'Errore di rete') || str_contains($raw, 'SSL')) {
-            return 'Il PC non raggiunge login.microsoftonline.com: controlla connessione, proxy o certificati (http.proxy / http.ca_bundle).';
+            return 'Il PC non raggiunge login.microsoftonline.com: controlla connessione e proxy (http.proxy). Dettaglio: ' . mb_substr($raw, 0, 250);
         }
         return 'Microsoft ha rifiutato l\'accesso: ' . mb_substr($raw, 0, 250);
     }

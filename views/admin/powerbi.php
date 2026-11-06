@@ -1,7 +1,8 @@
 <?php
 /**
  * @var string $mode  @var bool $modeLocked  @var array $values  @var array $sources  @var ?string $hint
- * @var bool $complete  @var bool $canEncrypt  @var array $runs  @var bool $running  @var ?array $test
+ * @var bool $complete  @var ?string $encryptProblem  @var ?string $secretError  @var array $checks
+ * @var array $runs  @var bool $running  @var ?array $test
  */
 $locked = static fn (string $k) => ($sources[$k] ?? null) === 'config';
 ?>
@@ -18,13 +19,24 @@ $locked = static fn (string $k) => ($sources[$k] ?? null) === 'config';
     <?php endif ?>
 </div>
 
+<?php if ($checks): ?>
+    <div class="alert alert-<?= in_array('fail', array_column($checks, 'status'), true) ? 'danger' : 'warning' ?> small">
+        <strong>Controllo dell'installazione</strong> (PHP di Apache):
+        <ul class="mb-0 mt-1">
+            <?php foreach ($checks as $c): ?>
+                <li><strong><?= e($c['label']) ?>:</strong> <?= e($c['message']) ?></li>
+            <?php endforeach ?>
+        </ul>
+    </div>
+<?php endif ?>
+
 <div class="row g-4">
     <div class="col-lg-6">
         <section class="rg-section">
             <h2 class="h5">1. Credenziali dell'app «Ramingo-Sync»</h2>
             <p class="small text-secondary">Le trovi su portal.azure.com → Microsoft Entra ID → Registrazioni app → Ramingo-Sync.</p>
-            <?php if (!$canEncrypt): ?>
-                <div class="alert alert-warning small">Per salvare il segreto in modo cifrato riavvia Apache dal pannello di XAMPP (Stop, poi Start).</div>
+            <?php if ($encryptProblem): ?>
+                <div class="alert alert-warning small">Il segreto non si può salvare: <?= e($encryptProblem) ?></div>
             <?php endif ?>
             <form method="post" action="<?= url('admin/powerbi') ?>" autocomplete="off">
                 <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
@@ -44,6 +56,9 @@ $locked = static fn (string $k) => ($sources[$k] ?? null) === 'config';
                     <label class="form-label" for="pbi-secret">Segreto client (valore)</label>
                     <input class="form-control font-monospace" id="pbi-secret" name="client_secret" type="password" autocomplete="new-password"
                            placeholder="<?= $hint ? 'Salvato (' . e($hint) . ') — lascia vuoto per mantenerlo' : 'Incolla la colonna «Valore»' ?>" <?= $locked('client_secret') ? 'disabled' : '' ?>>
+                    <?php if ($secretError): ?>
+                        <div class="form-text text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Il segreto salvato non si riesce a leggere: <?= e($secretError) ?></div>
+                    <?php endif ?>
                     <div class="form-text">Certificati e segreti → colonna <strong>Valore</strong>, non «ID segreto». Salvato cifrato, non viene mai mostrato.</div>
                 </div>
                 <button class="btn btn-primary btn-sm">Salva</button>
@@ -58,7 +73,7 @@ $locked = static fn (string $k) => ($sources[$k] ?? null) === 'config';
             <form method="post" action="<?= url('admin/powerbi/prova') ?>" data-busy>
                 <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
                 <button class="btn btn-outline-primary btn-sm" <?= $complete ? '' : 'disabled' ?>><i class="fa-solid fa-plug"></i> <span>Prova collegamento</span></button>
-                <?php if (!$complete): ?><span class="small text-secondary ms-2">Compila prima i tre valori.</span><?php endif ?>
+                <?php if (!$complete): ?><span class="small text-secondary ms-2"><?= $secretError ? 'Il segreto salvato non si legge: reinseriscilo a sinistra e premi Salva.' : 'Compila prima i tre valori.' ?></span><?php endif ?>
             </form>
             <?php if ($test): ?>
                 <ul class="list-unstyled mt-3 mb-0">

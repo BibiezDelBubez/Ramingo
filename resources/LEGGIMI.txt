@@ -1,0 +1,2 @@
+Certificati delle autorità (bundle Mozilla, dal pacchetto certifi 2026.10.23).
+Ramingo lo usa solo se non trova un altro file di certificati (vedi src/Services/Http/CaBundle.php).
